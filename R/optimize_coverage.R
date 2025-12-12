@@ -9,7 +9,7 @@ optimize_coverage <- function(locations, to_cover, cover_dist) {
   coverages <- distances |>
     # Convert to data frame
     as.data.frame() |>
-    setNames(1:nrow(locations)) |> 
+    setNames(seq_len(nrow(locations))) |> 
     dplyr::mutate(to_cover_id = to_cover$.id) |>
     # Wide to long
     tidyr::pivot_longer(-to_cover_id,
