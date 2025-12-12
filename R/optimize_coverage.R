@@ -1,26 +1,26 @@
 
-optimize_coverage <- function(locations, uncovered, cover_dist) {
+optimize_coverage <- function(locations, to_cover, cover_dist) {
   # add generic id for tracking
-  uncovered <- uncovered |>
+  to_cover <- to_cover |>
     dplyr::mutate(.id = dplyr::row_number())
 
-  # Determine which of uncovered are covered by each location
-  distances <- sf::st_distance(uncovered, locations)
+  # Determine which of to_cover are covered by each location
+  distances <- sf::st_distance(to_cover, locations)
   coverages <- distances |>
     # Convert to data frame
     as.data.frame() |>
     setNames(1:nrow(locations)) |> 
-    dplyr::mutate(uncovered_id = uncovered$.id) |>
+    dplyr::mutate(to_cover_id = to_cover$.id) |>
     # Wide to long
-    tidyr::pivot_longer(-uncovered_id,
+    tidyr::pivot_longer(-to_cover_id,
       names_to = "location_id",
       values_to = "dist",
       names_transform = as.numeric
     ) |>
     # include weighting column if present
     dplyr::left_join(
-      uncovered |> handyr::sf_as_df() |> dplyr::select(.id, dplyr::any_of("total")), 
-      by = c(uncovered_id = ".id")
+      to_cover |> handyr::sf_as_df() |> dplyr::select(.id, dplyr::any_of("total")), 
+      by = c(to_cover_id = ".id")
     )
   # Add weighting column if not already present
   if(! "total" %in% names(coverages)) {
@@ -34,19 +34,19 @@ optimize_coverage <- function(locations, uncovered, cover_dist) {
     dplyr::group_by(location_id) |> # for each location
     dplyr::filter(dist <= cover_dist) |> # drop communities outside coverage range
     dplyr::summarise(
-      n = sum(total), # count how many uncovered within range
+      n = sum(total), # count how many to_cover within range
       nearby_totals = paste(total, collapse = "|"), # Paste the totals together
-      nearby_ids = paste(uncovered_id, collapse = "|") # Paste the ids together
+      nearby_ids = paste(to_cover_id, collapse = "|") # Paste the ids together
     )
 
-  # Keep placing `locations` w/ best coverage until no more `uncovered` to cover
+  # Keep placing `locations` w/ best coverage until no more `to_cover` to cover
   optimized_locations <- list()
   while (sum(coverages$n) != 0 & length(optimized_locations) < nrow(locations)) {
     # Store the location with best coverage
     coverages <- dplyr::arrange(coverages, desc(n))
     optimized_locations <- optimized_locations |>
       c(list(coverages[1, ]))
-    # Get uncovered now covered by that location
+    # Get to_cover now covered by that location
     newly_covered <- coverages$nearby_ids[1] |>
       stringr::str_split("\\|", simplify = T) |> 
       _[1, ]
