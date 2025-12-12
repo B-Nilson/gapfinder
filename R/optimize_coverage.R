@@ -1,16 +1,16 @@
 
-optimize_coverage <- function(locations, to_cover, cover_dist) {
+optimize_coverage <- function(install_at, to_cover, cover_dist) {
   # add generic id for tracking
   to_cover <- to_cover |>
     dplyr::mutate(.id = dplyr::row_number())
 
   # Determine which of to_cover are covered by each location
   distances <- to_cover |> 
-    sf::st_distance(locations)
+    sf::st_distance(install_at)
   coverages <- distances |>
     # Convert to data frame
     as.data.frame() |>
-    setNames(seq_len(nrow(locations))) |> 
+    setNames(seq_len(nrow(install_at))) |> 
     dplyr::mutate(to_cover_id = to_cover$.id) |>
     tidyr::pivot_longer(
       cols = -"to_cover_id",
@@ -40,9 +40,9 @@ optimize_coverage <- function(locations, to_cover, cover_dist) {
       nearby_ids = .data$to_cover_id |> paste(collapse = "|")
     )
 
-  # Keep placing `locations` w/ best coverage until no more `to_cover` to cover
+  # Keep placing `install_at` w/ best coverage until no more `to_cover` to cover
   optimized_locations <- list()
-  while (sum(coverages$n) != 0 & length(optimized_locations) < nrow(locations)) {
+  while (sum(coverages$n) != 0 & length(optimized_locations) < nrow(install_at)) {
     # Store the location with best coverage
     coverages <- coverages |> dplyr::arrange(dplyr::desc(.data$n))
     optimized_locations <- optimized_locations |>
@@ -86,5 +86,5 @@ optimize_coverage <- function(locations, to_cover, cover_dist) {
   rows <- optimized_locations |>
     dplyr::bind_rows() |>
     dplyr::pull(location_id) 
-  locations[rows, ]
+  install_at[rows, ]
 }
