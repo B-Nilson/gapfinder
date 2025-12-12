@@ -1,5 +1,5 @@
 
-optimize_coverage <- function(install_at, to_cover, cover_dist) {
+optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units::set_units("km")) {
   # add generic id for tracking
   to_cover <- to_cover |>
     dplyr::mutate(.id = dplyr::row_number())
@@ -33,7 +33,7 @@ optimize_coverage <- function(install_at, to_cover, cover_dist) {
   #   that has all 3 community ids pasted together with a "|" between
   coverages <- coverages |>
     dplyr::group_by("location_id") |> # for each location
-    dplyr::filter(.data$dist <= cover_dist) |> # drop to_cover outside coverage range
+    dplyr::filter(.data$dist <= cover_distance) |> # drop to_cover outside coverage range
     dplyr::summarise(
       n = .data$total |> sum(),
       nearby_totals = .data$total |> paste(collapse = "|"),
