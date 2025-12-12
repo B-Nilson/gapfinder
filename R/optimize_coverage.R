@@ -1,5 +1,5 @@
 
-optimize_monitor_coverage <- function(locations, uncovered, cover_dist) {
+optimize_coverage <- function(locations, uncovered, cover_dist) {
   # add generic id for tracking
   uncovered <- uncovered |>
     dplyr::mutate(.id = dplyr::row_number())
