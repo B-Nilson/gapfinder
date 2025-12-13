@@ -30,6 +30,15 @@ optimize_coverage <- function(
   cover_distance = 25 |> units::set_units("km"),
   weight_columns = c(".weight", ".weight")
 ) {
+  stopifnot(
+    inherits(install_at, "sf") & nrow(install_at) > 0,
+    inherits(to_cover, "sf") & nrow(to_cover) > 0,
+    is.null(existing_locations) | inherits(existing_locations, "sf"),
+    inherits(cover_distance, "units") | is.numeric(cover_distance),
+    length(weight_columns) %in% c(1, 2),
+    is.character(weight_columns)
+  )
+
   cover_distance <- cover_distance |>
     units::set_units("km") # just in case
 
