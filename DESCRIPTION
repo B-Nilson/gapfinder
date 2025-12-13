@@ -3,7 +3,14 @@ Title: Identifies Coverage Gaps in Monitoring Networks
 Version: 0.0.0.9000
 Authors@R: 
     person("Brayden", "Nilson", , "nilson.brayden@gmail.com", role = c("aut", "cre"))
-Description: Many monitoring networks do not have full coverage of their intended targets. gapfinder provides the abiliity to identify these gaps in coverage and optimize potential installation locations to meet coverage goals. 
+Description: Many monitoring networks do not have full coverage of their intended targets.
+    Network managers are usually working with limited budgets for expanding exisiting networks, and
+    knowing where to prioritize installations to maximize coverage is a useful tool for planning.
+    gapfinder provides the abiliity to identify optimal installation locations to meet coverage goals. 
+    You can provide potential installation locations, exisiting monitoring locations (if any), 
+    locations desired to be covered, and individual prioritization weights for potential locations and locations to be covered.
+    In return, gapfinder will calculate the optimal locations to cover as much as possible, minimizing overlap, and allows for 
+    prioritizing installations based on unique coverage of each installation. 
 License: MIT + file LICENSE
 Depends:
     R (>= 4.1.0)
