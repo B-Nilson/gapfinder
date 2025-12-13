@@ -30,6 +30,6 @@ test_that("real case works", {
           "Optimized Installations"
         )[i]
       )
-    }) |> 
-      aqmapr::make_leaflet_map(point_layers = _)
+    }) |>
+    aqmapr::make_leaflet_map(point_layers = _)
 })

@@ -1,5 +1,10 @@
 #' @importFrom rlang :=
-optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units::set_units("km"), weight_columns = c(".weight", ".weight")) {
+optimize_coverage <- function(
+  install_at,
+  to_cover,
+  cover_distance = 25 |> units::set_units("km"),
+  weight_columns = c(".weight", ".weight")
+) {
   # add generic id for tracking
   to_cover <- to_cover |>
     dplyr::mutate(.id = dplyr::row_number())
@@ -11,29 +16,37 @@ optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units
     weight_columns <- rep(weight_columns, 2)
   }
   names(weight_columns) <- c("to_cover_weight", "install_at_weight")
-  coverages <- to_cover |> 
+  coverages <- to_cover |>
     sf::st_is_within_distance(y = install_at, dist = cover_distance) |>
     tibble::enframe(name = "to_cover_id", value = "matches") |>
     tidyr::unnest(matches) |>
     dplyr::rename(install_at_id = matches) |>
     # include weighting columns if present
     dplyr::left_join(
-      install_at |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[1])), 
+      install_at |>
+        handyr::sf_as_df() |>
+        dplyr::select(".id", dplyr::any_of(weight_columns[1])),
       by = c(install_at_id = ".id")
-    ) |> 
+    ) |>
     dplyr::left_join(
-      to_cover |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[2])), 
+      to_cover |>
+        handyr::sf_as_df() |>
+        dplyr::select(".id", dplyr::any_of(weight_columns[2])),
       by = c(to_cover_id = ".id")
     )
-  
+
   # Add weighting columns if not already present
-  if(! names(weight_columns[1]) %in% names(coverages)) {
-    warning("No `weight_columns[1]` column found in `to_cover`, assuming equal weighting of points to cover.")
+  if (!names(weight_columns[1]) %in% names(coverages)) {
+    warning(
+      "No `weight_columns[1]` column found in `to_cover`, assuming equal weighting of points to cover."
+    )
     coverages <- coverages |>
       dplyr::mutate(!!names(weight_columns[1]) := 1)
   }
-  if(! names(weight_columns[2]) %in% names(coverages)) {
-    warning("No `weight_columns[2]` column found in `install_at`, assuming equal weighting of installation locations.")
+  if (!names(weight_columns[2]) %in% names(coverages)) {
+    warning(
+      "No `weight_columns[2]` column found in `install_at`, assuming equal weighting of installation locations."
+    )
     coverages <- coverages |>
       dplyr::mutate(!!names(weight_columns[2]) := 1)
   }
@@ -43,17 +56,23 @@ optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units
   coverages <- coverages |>
     dplyr::group_by(.data$install_at_id) |> # for each `install_at` point
     dplyr::summarise(
-      n = (.data[[names(weight_columns)[1]]] + .data[[names(weight_columns)[2]]]) |> sum(),
-      nearby_weights = (.data[[names(weight_columns)[1]]] + .data[[names(weight_columns)[2]]]) |> list(),
+      n = (.data[[names(weight_columns)[1]]] +
+        .data[[names(weight_columns)[2]]]) |>
+        sum(),
+      nearby_weights = (.data[[names(weight_columns)[1]]] +
+        .data[[names(weight_columns)[2]]]) |>
+        list(),
       nearby_ids = .data$to_cover_id |> list()
     )
 
   # Keep placing `install_at` w/ best coverage until no more `to_cover` to cover
   optimized_locations <- list()
-  while(sum(coverages$n) != 0 & length(optimized_locations) < nrow(install_at)) {
+  while (
+    sum(coverages$n) != 0 & length(optimized_locations) < nrow(install_at)
+  ) {
     # Store the location with best coverage
-    coverages <- coverages |> 
-      dplyr::arrange(dplyr::desc(.data$n)) |> 
+    coverages <- coverages |>
+      dplyr::arrange(dplyr::desc(.data$n)) |>
       dplyr::filter(.data$n != 0)
     optimized_locations <- optimized_locations |>
       c(list(coverages[1, ]))
@@ -61,12 +80,16 @@ optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units
     coverages <- coverages[-1, ]
     if (nrow(coverages) == 0) {
       break
-    } 
+    }
 
     # Remove those from the nearby_ids list, and adjust nearby counts and weights
     # (eventually this will stop the loop once all are covered)
-    coverages[, c("n", "nearby_ids", "nearby_weights")] <- coverages$nearby_ids |> 
-      handyr::for_each( 
+    coverages[, c(
+      "n",
+      "nearby_ids",
+      "nearby_weights"
+    )] <- coverages$nearby_ids |>
+      handyr::for_each(
         .bind = TRUE,
         .enumerate = TRUE,
         .show_progress = FALSE,
@@ -81,13 +104,13 @@ optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units
             nearby_ids = updated_nearby |> list(),
             nearby_weights = updated_weights |> list()
           )
-        } 
+        }
       )
   }
   # Return selected install_at points
   rows <- optimized_locations |>
     dplyr::bind_rows() |>
-    dplyr::pull(install_at_id) 
-  install_at[rows, ] |> 
+    dplyr::pull(install_at_id)
+  install_at[rows, ] |>
     dplyr::select(-".id")
 }
