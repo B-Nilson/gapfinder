@@ -39,8 +39,13 @@ optimize_coverage <- function(
     is.character(weight_columns)
   )
 
+  # Cleanup inputs
   cover_distance <- cover_distance |>
     units::set_units("km") # just in case
+  if (length(weight_columns) == 1) {
+    weight_columns <- rep(weight_columns, 2)
+  }
+  names(weight_columns) <- c("to_cover_weight", "install_at_weight")
 
   # add generic id for tracking
   to_cover <- to_cover |>
@@ -60,10 +65,6 @@ optimize_coverage <- function(
   }
 
   # Determine which of to_cover are covered by each install_at
-  if (length(weight_columns) == 1) {
-    weight_columns <- rep(weight_columns, 2)
-  }
-  names(weight_columns) <- c("to_cover_weight", "install_at_weight")
   coverages <- install_at |>
     get_covered(to_cover = to_cover, cover_distance = cover_distance) |>
     add_weight_columns(
