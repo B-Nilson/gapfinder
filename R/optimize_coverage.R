@@ -66,13 +66,13 @@ optimize_coverage <- function(
   # Join all to_cover near each location into a single entry per location
   coverages <- coverages |>
     dplyr::group_by(.data$install_at_id) |> # for each `install_at` point
+    dplyr::mutate(
+      weight = .data[[names(weight_columns)[1]]] +
+        .data[[names(weight_columns)[2]]]
+    ) |>
     dplyr::summarise(
-      n = (.data[[names(weight_columns)[1]]] +
-        .data[[names(weight_columns)[2]]]) |>
-        sum(),
-      nearby_weights = (.data[[names(weight_columns)[1]]] +
-        .data[[names(weight_columns)[2]]]) |>
-        list(),
+      n = .data$weight |> sum(),
+      nearby_weights = .data$weight |> list(),
       nearby_ids = .data$to_cover_id |> list()
     )
 
