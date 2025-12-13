@@ -101,7 +101,7 @@ optimize_coverage <- function(
   # Determine which of to_cover are covered by each `install_at`
   coverages <- install_at |>
     get_covered(to_cover = to_cover, cover_distance = cover_distance) |>
-    add_weight_columns(
+    add_weight_column(
       to_cover = to_cover,
       install_at = install_at,
       weight_columns = weight_columns
@@ -110,10 +110,6 @@ optimize_coverage <- function(
   # Combine and sum all ids/weights for each `install_at`
   coverages <- coverages |>
     dplyr::group_by(.data$install_at_id) |>
-    dplyr::mutate(
-      weight = .data[[names(weight_columns)[1]]] +
-        .data[[names(weight_columns)[2]]]
-    ) |>
     dplyr::summarise(
       n = .data$weight |> sum(),
       nearby_weights = .data$weight |> list(),
@@ -178,14 +174,14 @@ get_covered <- function(install_at, to_cover, cover_distance) {
     dplyr::rename(install_at_id = .data$matches)
 }
 
-add_weight_columns <- function(
+add_weight_column <- function(
   coverages,
   to_cover,
   install_at,
   weight_columns
 ) {
+  # include weighting columns if present in data
   coverages <- coverages |>
-    # include weighting columns if present
     dplyr::left_join(
       install_at |>
         handyr::sf_as_df() |>
@@ -199,7 +195,7 @@ add_weight_columns <- function(
       by = c(to_cover_id = ".id")
     )
 
-  # Add weighting columns if not already present
+  # Add default constant `to_cover` weighting column if not already present
   if (!names(weight_columns[1]) %in% names(coverages)) {
     warning(
       "No `weight_columns[1]` column found in `to_cover`, assuming equal weighting of points to cover."
@@ -207,6 +203,8 @@ add_weight_columns <- function(
     coverages <- coverages |>
       dplyr::mutate(!!names(weight_columns[1]) := 1)
   }
+
+  # Add default constant `install_at` weighting column if not already present
   if (!names(weight_columns[2]) %in% names(coverages)) {
     warning(
       "No `weight_columns[2]` column found in `install_at`, assuming equal weighting of installation locations."
@@ -215,5 +213,9 @@ add_weight_columns <- function(
       dplyr::mutate(!!names(weight_columns[2]) := 1)
   }
 
-  return(coverages)
+  coverages |>
+    dplyr::mutate(
+      weight = .data[[names(weight_columns)[1]]] +
+        .data[[names(weight_columns)[2]]]
+    )
 }
