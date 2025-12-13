@@ -20,14 +20,25 @@ knitr::opts_chunk$set(
 [![CRAN status](https://www.r-pkg.org/badges/version/gapfinder)](https://CRAN.R-project.org/package=gapfinder)
 <!-- badges: end -->
 
-The goal of gapfinder is to ...
+Many monitoring networks do not have full coverage of their intended targets.
+Network managers are usually working with limited budgets for expanding exisiting networks, and
+knowing where to prioritize installations to maximize coverage is a useful tool for planning.
+
+gapfinder provides the abiliity to identify optimal installation locations to meet coverage goals.
+ 
+You can provide potential installation locations, exisiting monitoring locations (if any), 
+locations desired to be covered, and individual prioritization weights for potential locations and locations to be covered.
+In return, gapfinder will calculate the optimal locations to cover as much as possible, minimizing overlap, and allows for 
+prioritizing installations based on unique coverage of each installation. 
 
 ## Installation
 
 You can install the development version of gapfinder like so:
 
 ``` r
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
+# install.packages("pak")
+pak::pak("B-Nilson/gapfinder")
+
 ```
 
 ## Example
@@ -36,21 +47,43 @@ This is a basic example which shows you how to solve a common problem:
 
 ```{r example}
 library(gapfinder)
-## basic example code
+rlang::check_installed("canadata")
+rlang::check_installed("aqmapr")
+# pak::pak("B-Nilson/canadata") # in case above fails
+
+# Define where we could install monitors (Yukon communities)
+install_at <- canadata::communities |>
+  dplyr::filter(prov_terr == "YT") |>
+  sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84") |>
+  # Cities are easier to install than hamlets
+  # here they provide 4x more coverage (4 levels of type)
+  dplyr::mutate(ease_of_install = length(levels(type)) + 1 - as.numeric(type))
+
+# Define what we want the monitors to cover (Yukon population)
+to_cover <- canadata::gridded_2016_population |>
+  dplyr::filter(stringr::str_detect(prov_terr, "YT")) |> # any cell that intersects Yukon
+  sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
+
+# Define existing monitors (Canadian PM2.5 monitoring network - NAPS, PurpleAir, and AQEgg networks)
+existing_locations <- "https://aqmap.ca/aqmap/data/aqmap_most_recent_obs.csv" |>
+  read.csv() |>
+  dplyr::select(site_id = sensor_index, network, lng, lat, name = monitor) |>
+  sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
+
+# Find the optimal locations to get all YT population within 10 km of a monitor
+# Coverage depends on population x ease of install
+optimized_locations <- install_at |>
+  optimize_coverage(
+    to_cover = to_cover,
+    existing_locations = existing_locations,
+    cover_distance = units::set_units(10, "km"),
+    weight_columns = c("ease_of_install", "total_population")
+  )
+
+# View the results
+install_at |> print()
+to_cover |> print()
+existing_locations |> print()
+optimized_locations |> print()
+
 ```
-
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
-
-```{r cars}
-summary(cars)
-```
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
