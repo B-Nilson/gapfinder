@@ -1,7 +1,7 @@
 #' Optimize coverage of locations by a set of installations within a desired distance.
 #'
 #' @description
-#' Finds the smallest subset of points that covers all possible locations within a given distance. 
+#' Finds the smallest subset of points that covers all possible locations within a given distance.
 #' Allows for weighting of both locations to cover and installation locations based on columns in the data frames.
 #'
 #' For example, you may want to weight cities over villages for ease of installation,
@@ -17,7 +17,7 @@
 #' @param weight_columns A character vector containing the names of the columns in `install_at` and `to_cover`
 #'   that should be used as weights when calculating the coverage of each potential installation.
 #'   A weight of 2 is akin to double coverage from/for that location.
-#'   If no columns in `install_at` or `to_cover` match the respective names in `weight_columns`, 
+#'   If no columns in `install_at` or `to_cover` match the respective names in `weight_columns`,
 #'   then equal weighting for all of those locations is assumed.
 #'   If only one column is provided, it will be used for both `install_at` and `to_cover`.
 #'   Defaults to c(".weight", ".weight"), equivalent to ".weight".
@@ -28,7 +28,7 @@
 #' @examples
 #' library(gapfinder)
 #' rlang::check_installed("canadata")
-#' 
+#'
 #' # Define where we could install monitors (canadian communities)
 #' install_at <- canadata::communities |>
 #'   sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84") |>
@@ -54,7 +54,7 @@
 #'   existing_locations = existing_locations,
 #'   cover_distance = units::set_units(50, "km"),
 #'   weight_columns = c("ease_of_install", "total_population")
-#' ) 
+#' )
 #'
 #' @importFrom rlang := .data
 optimize_coverage <- function(

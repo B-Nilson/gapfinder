@@ -72,6 +72,6 @@ optimized_locations <- optimize_coverage(
   existing_locations = existing_locations,
   cover_distance = units::set_units(50, "km"),
   weight_columns = c("ease_of_install", "total_population")
-) 
+)
 
 }
