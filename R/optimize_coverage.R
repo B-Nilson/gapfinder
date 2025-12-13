@@ -142,30 +142,6 @@ optimize_coverage <- function(
     dplyr::select(-".id")
 }
 
-update_coverage <- function(coverages, newly_covered_ids) {
-  if (nrow(coverages) == 0) {
-    return(coverages)
-  }
-  modified_cols <- c("n", "nearby_ids", "nearby_weights")
-  coverages[, modified_cols] <- coverages$nearby_ids |>
-    handyr::for_each(
-      .bind = TRUE,
-      .enumerate = TRUE,
-      .show_progress = FALSE,
-      \(current_nearby, i) {
-        current_weights <- coverages$nearby_weights[[i]]
-        keep <- !current_nearby %in% newly_covered_ids
-        updated_weights <- current_weights[keep]
-        list(
-          n = updated_weights |> sum(),
-          nearby_ids = current_nearby[keep] |> list(),
-          nearby_weights = updated_weights |> list()
-        )
-      }
-    )
-  return(coverages)
-}
-
 get_covered <- function(install_at, to_cover, cover_distance) {
   to_cover |>
     sf::st_is_within_distance(y = install_at, dist = cover_distance) |>
@@ -218,4 +194,28 @@ add_weight_column <- function(
       weight = .data[[names(weight_columns)[1]]] +
         .data[[names(weight_columns)[2]]]
     )
+}
+
+update_coverage <- function(coverages, newly_covered_ids) {
+  if (nrow(coverages) == 0) {
+    return(coverages)
+  }
+  modified_cols <- c("n", "nearby_ids", "nearby_weights")
+  coverages[, modified_cols] <- coverages$nearby_ids |>
+    handyr::for_each(
+      .bind = TRUE,
+      .enumerate = TRUE,
+      .show_progress = FALSE,
+      \(current_nearby, i) {
+        current_weights <- coverages$nearby_weights[[i]]
+        keep <- !current_nearby %in% newly_covered_ids
+        updated_weights <- current_weights[keep]
+        list(
+          n = updated_weights |> sum(),
+          nearby_ids = current_nearby[keep] |> list(),
+          nearby_weights = updated_weights |> list()
+        )
+      }
+    )
+  return(coverages)
 }
