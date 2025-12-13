@@ -41,13 +41,8 @@ optimize_coverage <- function(
 
   # Drop to_cover that are already covered by existing_locations
   if (!is.null(existing_locations)) {
-    covered_by_existing <- to_cover |>
-      sf::st_is_within_distance(
-        y = existing_locations,
-        dist = cover_distance
-      ) |>
-      tibble::enframe(name = "to_cover_id", value = "matches") |>
-      tidyr::unnest(matches) |>
+    covered_by_existing <- existing_locations |>
+      get_covered(to_cover = to_cover, cover_distance = cover_distance) |>
       dplyr::pull(to_cover_id) |>
       unique()
     to_cover <- to_cover |>
@@ -60,40 +55,14 @@ optimize_coverage <- function(
     weight_columns <- rep(weight_columns, 2)
   }
   names(weight_columns) <- c("to_cover_weight", "install_at_weight")
-  coverages <- to_cover |>
-    sf::st_is_within_distance(y = install_at, dist = cover_distance) |>
-    tibble::enframe(name = "to_cover_id", value = "matches") |>
-    tidyr::unnest(matches) |>
-    dplyr::rename(install_at_id = matches) |>
-    # include weighting columns if present
-    dplyr::left_join(
-      install_at |>
-        handyr::sf_as_df() |>
-        dplyr::select(".id", dplyr::any_of(weight_columns[1])),
-      by = c(install_at_id = ".id")
-    ) |>
-    dplyr::left_join(
-      to_cover |>
-        handyr::sf_as_df() |>
-        dplyr::select(".id", dplyr::any_of(weight_columns[2])),
-      by = c(to_cover_id = ".id")
+  coverages <- install_at |>
+    get_covered(to_cover = to_cover, cover_distance = cover_distance) |>
+    add_weight_columns(
+      to_cover = to_cover,
+      install_at = install_at,
+      weight_columns = weight_columns
     )
 
-  # Add weighting columns if not already present
-  if (!names(weight_columns[1]) %in% names(coverages)) {
-    warning(
-      "No `weight_columns[1]` column found in `to_cover`, assuming equal weighting of points to cover."
-    )
-    coverages <- coverages |>
-      dplyr::mutate(!!names(weight_columns[1]) := 1)
-  }
-  if (!names(weight_columns[2]) %in% names(coverages)) {
-    warning(
-      "No `weight_columns[2]` column found in `install_at`, assuming equal weighting of installation locations."
-    )
-    coverages <- coverages |>
-      dplyr::mutate(!!names(weight_columns[2]) := 1)
-  }
   # Join all to_cover near each location into a single entry per location
   # ie: 3 rows (1 for each nearby community) for a site -> 1 row with a column
   #   that has all 3 community ids pasted together with a "|" between
@@ -157,4 +126,52 @@ optimize_coverage <- function(
     dplyr::pull(install_at_id)
   install_at[rows, ] |>
     dplyr::select(-".id")
+}
+
+get_covered <- function(install_at, to_cover, cover_distance) {
+  to_cover |>
+    sf::st_is_within_distance(y = install_at, dist = cover_distance) |>
+    tibble::enframe(name = "to_cover_id", value = "matches") |>
+    tidyr::unnest(matches) |>
+    dplyr::rename(install_at_id = matches)
+}
+
+add_weight_columns <- function(
+  coverages,
+  to_cover,
+  install_at,
+  weight_columns
+) {
+  coverages <- coverages |>
+    # include weighting columns if present
+    dplyr::left_join(
+      install_at |>
+        handyr::sf_as_df() |>
+        dplyr::select(".id", dplyr::any_of(weight_columns[1])),
+      by = c(install_at_id = ".id")
+    ) |>
+    dplyr::left_join(
+      to_cover |>
+        handyr::sf_as_df() |>
+        dplyr::select(".id", dplyr::any_of(weight_columns[2])),
+      by = c(to_cover_id = ".id")
+    )
+
+  # Add weighting columns if not already present
+  if (!names(weight_columns[1]) %in% names(coverages)) {
+    warning(
+      "No `weight_columns[1]` column found in `to_cover`, assuming equal weighting of points to cover."
+    )
+    coverages <- coverages |>
+      dplyr::mutate(!!names(weight_columns[1]) := 1)
+  }
+  if (!names(weight_columns[2]) %in% names(coverages)) {
+    warning(
+      "No `weight_columns[2]` column found in `install_at`, assuming equal weighting of installation locations."
+    )
+    coverages <- coverages |>
+      dplyr::mutate(!!names(weight_columns[2]) := 1)
+  }
+
+  return(coverages)
 }
