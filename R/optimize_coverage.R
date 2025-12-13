@@ -18,12 +18,12 @@ optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units
     dplyr::rename(install_at_id = matches) |>
     # include weighting columns if present
     dplyr::left_join(
-      to_cover |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[1])), 
-      by = c(to_cover_id = ".id")
-    ) |>
-    dplyr::left_join(
-      install_at |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[2])), 
+      install_at |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[1])), 
       by = c(install_at_id = ".id")
+    ) |> 
+    dplyr::left_join(
+      to_cover |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[2])), 
+      by = c(to_cover_id = ".id")
     )
   
   # Add weighting columns if not already present
