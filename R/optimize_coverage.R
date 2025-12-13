@@ -78,9 +78,10 @@ optimize_coverage <- function(
 
   # Keep placing `install_at` w/ best coverage until no more `to_cover` to cover
   optimized_locations <- list()
-  while (
+  is_more_to_cover <- function() {
     sum(coverages$n) != 0 & length(optimized_locations) < nrow(install_at)
-  ) {
+  }
+  while (is_more_to_cover()) {
     # Store the location with best coverage
     coverages <- coverages |>
       dplyr::arrange(dplyr::desc(.data$n)) |>
