@@ -1,26 +1,41 @@
 #' @importFrom rlang :=
-optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units::set_units("km"), weight_column = ".weight") {
+optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units::set_units("km"), weight_columns = c(".weight", ".weight")) {
   # add generic id for tracking
   to_cover <- to_cover |>
     dplyr::mutate(.id = dplyr::row_number())
+  install_at <- install_at |>
+    dplyr::mutate(.id = dplyr::row_number())
 
   # Determine which of to_cover are covered by each install_at
+  if (length(weight_columns) == 1) {
+    weight_columns <- rep(weight_columns, 2)
+  }
+  names(weight_columns) <- c("to_cover_weight", "install_at_weight")
   coverages <- to_cover |> 
     sf::st_is_within_distance(y = install_at, dist = cover_distance) |>
     tibble::enframe(name = "to_cover_id", value = "matches") |>
     tidyr::unnest(matches) |>
     dplyr::rename(install_at_id = matches) |>
-    # include weighting column if present
+    # include weighting columns if present
     dplyr::left_join(
-      to_cover |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_column)), 
+      to_cover |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[1])), 
       by = c(to_cover_id = ".id")
+    ) |>
+    dplyr::left_join(
+      install_at |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_columns[2])), 
+      by = c(install_at_id = ".id")
     )
   
-  # Add weighting column if not already present
-  if(! weight_column %in% names(coverages)) {
-    warning("No `weight_column` column found in `to_cover`, assuming equal weighting of points to cover.")
+  # Add weighting columns if not already present
+  if(! names(weight_columns[1]) %in% names(coverages)) {
+    warning("No `weight_columns[1]` column found in `to_cover`, assuming equal weighting of points to cover.")
     coverages <- coverages |>
-      dplyr::mutate(!!weight_column := 1)
+      dplyr::mutate(!!names(weight_columns[1]) := 1)
+  }
+  if(! names(weight_columns[2]) %in% names(coverages)) {
+    warning("No `weight_columns[2]` column found in `install_at`, assuming equal weighting of installation locations.")
+    coverages <- coverages |>
+      dplyr::mutate(!!names(weight_columns[2]) := 1)
   }
   # Join all to_cover near each location into a single entry per location
   # ie: 3 rows (1 for each nearby community) for a site -> 1 row with a column
@@ -28,8 +43,8 @@ optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units
   coverages <- coverages |>
     dplyr::group_by(.data$install_at_id) |> # for each `install_at` point
     dplyr::summarise(
-      n = .data[[weight_column]] |> sum(),
-      nearby_weights = .data[[weight_column]] |> list(),
+      n = (.data[[names(weight_columns)[1]]] + .data[[names(weight_columns)[2]]]) |> sum(),
+      nearby_weights = (.data[[names(weight_columns)[1]]] + .data[[names(weight_columns)[2]]]) |> list(),
       nearby_ids = .data$to_cover_id |> list()
     )
 
@@ -73,5 +88,6 @@ optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units
   rows <- optimized_locations |>
     dplyr::bind_rows() |>
     dplyr::pull(install_at_id) 
-  install_at[rows, ]
+  install_at[rows, ] |> 
+    dplyr::select(-".id")
 }
