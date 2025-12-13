@@ -12,7 +12,7 @@
 #' @param cover_distance The distance from an installation that a point is considered to be covered.
 #'   Expected to be a `units` object, otherwise assumed to be in km.
 #'   Defaults to 25 km.
-#' @param weight_columns A character vector containing the names of the columns in `install_at` and `to_cover` 
+#' @param weight_columns A character vector containing the names of the columns in `install_at` and `to_cover`
 #'   that should be used as weights when calculating the coverage of each installation.
 #'   A weight of 2 is akin to double coverage from/for that location.
 #'   If no columns match the names in `weight_columns`, equal weighting is assumed.
@@ -64,8 +64,6 @@ optimize_coverage <- function(
     )
 
   # Join all to_cover near each location into a single entry per location
-  # ie: 3 rows (1 for each nearby community) for a site -> 1 row with a column
-  #   that has all 3 community ids pasted together with a "|" between
   coverages <- coverages |>
     dplyr::group_by(.data$install_at_id) |> # for each `install_at` point
     dplyr::summarise(
