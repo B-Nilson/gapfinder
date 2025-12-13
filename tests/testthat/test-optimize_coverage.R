@@ -7,7 +7,7 @@ test_that("real case works", {
     sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
 
   existing_locations <- "https://aqmap.ca/aqmap/data/aqmap_most_recent_obs.csv" |>
-    read.csv() |> 
+    read.csv() |>
     dplyr::select(site_id = sensor_index, network, lng, lat, name = monitor) |>
     sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
 
@@ -18,16 +18,20 @@ test_that("real case works", {
     cover_distance = units::set_units(25, "km"),
     weight_columns = c("ease_of_install", "total_population")
   ) |>
-    expect_silence()
+    expect_silent()
 
   skip_if_not(interactive())
+
+  to_cover_areas <- to_cover |>
+    sf::st_buffer(dist = units::set_units(25, "km")) |>
+    sf::st_union()
 
   list(
     install_at,
     existing_locations,
     optimized_locations
   ) |>
-    handyr::for_each(.enumerate = TRUE, \(x, i) {
+    handyr::for_each(.enumerate = TRUE, .show_progress = FALSE, \(x, i) {
       aqmapr::PointLayer(
         data = x,
         group = c(
@@ -36,8 +40,18 @@ test_that("real case works", {
           "Optimized Installations"
         )[i],
         label = ~name,
-        fill = c("grey", "green","blue")[i]
+        fill = c("grey", "green", "blue")[i]
       )
     }) |>
-    aqmapr::make_leaflet_map(point_layers = _)
+    aqmapr::make_leaflet_map(
+      point_layers = _,
+      polygon_layers = list(aqmapr::PolygonLayer(
+        data = to_cover_areas |>
+          sf::st_sf() |>
+          dplyr::rename(geometry = "to_cover_areas"),
+        group = "To Cover",
+        fill = "green",
+        opacity = 0.3
+      ))
+    )
 })
