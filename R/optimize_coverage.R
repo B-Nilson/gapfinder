@@ -64,7 +64,7 @@ optimize_coverage <- function(
       dplyr::mutate(.id = dplyr::row_number())
   }
 
-  # Determine which of to_cover are covered by each install_at
+  # Determine which of to_cover are covered by each `install_at`
   coverages <- install_at |>
     get_covered(to_cover = to_cover, cover_distance = cover_distance) |>
     add_weight_columns(
@@ -73,9 +73,9 @@ optimize_coverage <- function(
       weight_columns = weight_columns
     )
 
-  # Join all to_cover near each location into a single entry per location
+  # Combine and sum all ids/weights for each `install_at`
   coverages <- coverages |>
-    dplyr::group_by(.data$install_at_id) |> # for each `install_at` point
+    dplyr::group_by(.data$install_at_id) |>
     dplyr::mutate(
       weight = .data[[names(weight_columns)[1]]] +
         .data[[names(weight_columns)[2]]]
@@ -103,7 +103,7 @@ optimize_coverage <- function(
     coverages <- coverages[-1, ] |>
       update_coverage(newly_covered_ids = coverages$nearby_ids[[1]])
   }
-  
+
   # Return selected install_at points
   rows <- optimized_locations |>
     dplyr::bind_rows() |>
