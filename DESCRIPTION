@@ -5,9 +5,22 @@ Authors@R:
     person("Brayden", "Nilson", , "nilson.brayden@gmail.com", role = c("aut", "cre"))
 Description: Many monitoring networks do not have full coverage of their intended targets. gapfinder provides the abiliity to identify these gaps in coverage and optimize potential installation locations to meet coverage goals. 
 License: MIT + file LICENSE
+Depends:
+    R (>= 4.1.0)
 Suggests: 
+    canadata,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Imports: 
+    dplyr,
+    handyr (>= 0.0.0.9000),
+    rlang,
+    sf,
+    tibble,
+    tidyr,
+    units
+Remotes: 
+    B-Nilson/handyr
