@@ -1,3 +1,27 @@
+#' Optimize coverage of a set of locations by a set of installations.
+#'
+#' This function takes a set of points to cover and a set of installations
+#' and returns the subset of installations that cover the most points within a set distance
+#' with the least number of installations. It allows for weighting of
+#' points to cover and installations based on columns in the data frames.
+#'
+#' @param install_at An `sf` data frame containing the locations of the installations.
+#' @param to_cover An `sf` data frame containing the locations of the places to cover with installations.
+#' @param existing_locations A data frame containing the locations of existing installations.
+#'   `to_cover` will be filtered to exclude points that are already covered by `existing_locations`.
+#' @param cover_distance The distance from an installation that a point is considered to be covered.
+#'   Expected to be a `units` object, otherwise assumed to be in km.
+#'   Defaults to 25 km.
+#' @param weight_columns A character vector containing the names of the columns in `install_at` and `to_cover` 
+#'   that should be used as weights when calculating the coverage of each installation.
+#'   A weight of 2 is akin to double coverage from/for that location.
+#'   If no columns match the names in `weight_columns`, equal weighting is assumed.
+#'   If only one column is provided, it will be used for both `install_at` and `to_cover`.
+#'   Defaults to c(".weight", ".weight").
+#'
+#' @return A data frame containing the subset of installations that cover the most points with the least number of installations, weighted by `weight_columns`.
+#'
+#' @export
 #' @importFrom rlang :=
 optimize_coverage <- function(
   install_at,
@@ -6,6 +30,9 @@ optimize_coverage <- function(
   cover_distance = 25 |> units::set_units("km"),
   weight_columns = c(".weight", ".weight")
 ) {
+  cover_distance <- cover_distance |>
+    units::set_units("km") # just in case
+
   # add generic id for tracking
   to_cover <- to_cover |>
     dplyr::mutate(.id = dplyr::row_number())
