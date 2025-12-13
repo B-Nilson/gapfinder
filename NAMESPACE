@@ -2,3 +2,4 @@
 
 export(optimize_coverage)
 importFrom(rlang,":=")
+importFrom(rlang,.data)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/optimize_coverage.R
 \name{optimize_coverage}
 \alias{optimize_coverage}
-\title{Optimize coverage of a set of locations by a set of installations.}
+\title{Optimize coverage of locations by a set of installations within a desired distance.}
 \usage{
 optimize_coverage(
   install_at,
@@ -13,30 +13,65 @@ optimize_coverage(
 )
 }
 \arguments{
-\item{install_at}{An \code{sf} data frame containing the locations of the installations.}
+\item{install_at}{An \code{sf} data frame containing the locations of the to consider for installation.}
 
-\item{to_cover}{An \code{sf} data frame containing the locations of the places to cover with installations.}
+\item{to_cover}{An \code{sf} data frame containing the locations desired to be covered by \code{install_at} within \code{cover_distance}.}
 
 \item{existing_locations}{A data frame containing the locations of existing installations.
-\code{to_cover} will be filtered to exclude points that are already covered by \code{existing_locations}.}
+\code{to_cover} will be filtered to exclude points that are already covered by \code{existing_locations}.
+Defaults to \code{NULL} - no filtering is done.}
 
-\item{cover_distance}{The distance from an installation that a point is considered to be covered.
-Expected to be a \code{units} object, otherwise assumed to be in km.
+\item{cover_distance}{The distance from an installation that a location is considered to be covered.
+Expected to be a \code{units} object, otherwise a \code{numeric} which is assumed to be in km.
 Defaults to 25 km.}
 
 \item{weight_columns}{A character vector containing the names of the columns in \code{install_at} and \code{to_cover}
-that should be used as weights when calculating the coverage of each installation.
+that should be used as weights when calculating the coverage of each potential installation.
 A weight of 2 is akin to double coverage from/for that location.
-If no columns match the names in \code{weight_columns}, equal weighting is assumed.
+If no columns in \code{install_at} or \code{to_cover} match the respective names in \code{weight_columns},
+then equal weighting for all of those locations is assumed.
 If only one column is provided, it will be used for both \code{install_at} and \code{to_cover}.
-Defaults to c(".weight", ".weight").}
+Defaults to c(".weight", ".weight"), equivalent to ".weight".}
 }
 \value{
 A data frame containing the subset of installations that cover the most points with the least number of installations, weighted by \code{weight_columns}.
 }
 \description{
-This function takes a set of points to cover and a set of installations
-and returns the subset of installations that cover the most points within a set distance
-with the least number of installations. It allows for weighting of
-points to cover and installations based on columns in the data frames.
+Finds the smallest subset of points that covers all possible locations within a given distance.
+Allows for weighting of both locations to cover and installation locations based on columns in the data frames.
+
+For example, you may want to weight cities over villages for ease of installation,
+and you may want to prioritize higher populations to cover.
+}
+\examples{
+library(gapfinder)
+rlang::check_installed("canadata")
+
+# Define where we could install monitors (canadian communities)
+install_at <- canadata::communities |>
+  sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84") |>
+  # Cities are easier to install than hamlets
+  # here they provide 4x more coverage (4 levels of type)
+  dplyr::mutate(ease_of_install = length(levels(type)) + 1 - as.numeric(type))
+
+# Define what we want the monitors to cover (canadian population)
+to_cover <- canadata::gridded_2016_population |>
+  sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
+
+# Define existing monitors
+existing_locations <- "https://aqmap.ca/aqmap/data/aqmap_most_recent_obs.csv" |>
+  read.csv() |>
+  dplyr::select(site_id = sensor_index, network, lng, lat, name = monitor) |>
+  sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
+
+# Find the optimal locations for 50 km coverage
+# Coverage depends on population x ease of install within 50 km of each monitor
+optimized_locations <- optimize_coverage(
+  install_at = install_at,
+  to_cover = to_cover,
+  existing_locations = existing_locations,
+  cover_distance = units::set_units(50, "km"),
+  weight_columns = c("ease_of_install", "total_population")
+) 
+
 }
