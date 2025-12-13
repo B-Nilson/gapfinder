@@ -2,6 +2,7 @@
 optimize_coverage <- function(
   install_at,
   to_cover,
+  existing_locations = NULL,
   cover_distance = 25 |> units::set_units("km"),
   weight_columns = c(".weight", ".weight")
 ) {
@@ -10,6 +11,22 @@ optimize_coverage <- function(
     dplyr::mutate(.id = dplyr::row_number())
   install_at <- install_at |>
     dplyr::mutate(.id = dplyr::row_number())
+
+  # Drop to_cover that are already covered by existing_locations
+  if (!is.null(existing_locations)) {
+    covered_by_existing <- to_cover |>
+      sf::st_is_within_distance(
+        y = existing_locations,
+        dist = cover_distance
+      ) |>
+      tibble::enframe(name = "to_cover_id", value = "matches") |>
+      tidyr::unnest(matches) |>
+      dplyr::pull(to_cover_id) |>
+      unique()
+    to_cover <- to_cover |>
+      dplyr::filter(!.data$.id %in% covered_by_existing) |>
+      dplyr::mutate(.id = dplyr::row_number())
+  }
 
   # Determine which of to_cover are covered by each install_at
   if (length(weight_columns) == 1) {
