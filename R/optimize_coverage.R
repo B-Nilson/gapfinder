@@ -97,43 +97,42 @@ optimize_coverage <- function(
       dplyr::filter(.data$n != 0)
     optimized_locations <- optimized_locations |>
       c(list(coverages[1, ]))
-    newly_covered <- coverages$nearby_ids[[1]]
-    coverages <- coverages[-1, ]
-    if (nrow(coverages) == 0) {
-      break
-    }
 
-    # Remove those from the nearby_ids list, and adjust nearby counts and weights
-    # (eventually this will stop the loop once all are covered)
-    coverages[, c(
-      "n",
-      "nearby_ids",
-      "nearby_weights"
-    )] <- coverages$nearby_ids |>
-      handyr::for_each(
-        .bind = TRUE,
-        .enumerate = TRUE,
-        .show_progress = FALSE,
-        \(current_nearby, i) {
-          current_weights <- coverages$nearby_weights[[i]]
-          keep <- !current_nearby %in% newly_covered
-          updated_nearby <- current_nearby[keep]
-          updated_weights <- current_weights[keep]
-          updated_n <- sum(updated_weights)
-          list(
-            n = updated_weights |> sum(),
-            nearby_ids = updated_nearby |> list(),
-            nearby_weights = updated_weights |> list()
-          )
-        }
-      )
+    # Remove now covered ids from the nearby_ids list, and adjust nearby counts and weights
+    coverages <- coverages[-1, ] |>
+      update_coverage(newly_covered_ids = coverages$nearby_ids[[1]])
   }
+  
   # Return selected install_at points
   rows <- optimized_locations |>
     dplyr::bind_rows() |>
     dplyr::pull(install_at_id)
   install_at[rows, ] |>
     dplyr::select(-".id")
+}
+
+update_coverage <- function(coverages, newly_covered_ids) {
+  if (nrow(coverages) == 0) {
+    return(coverages)
+  }
+  modified_cols <- c("n", "nearby_ids", "nearby_weights")
+  coverages[, modified_cols] <- coverages$nearby_ids |>
+    handyr::for_each(
+      .bind = TRUE,
+      .enumerate = TRUE,
+      .show_progress = FALSE,
+      \(current_nearby, i) {
+        current_weights <- coverages$nearby_weights[[i]]
+        keep <- !current_nearby %in% newly_covered_ids
+        updated_weights <- current_weights[keep]
+        list(
+          n = updated_weights |> sum(),
+          nearby_ids = current_nearby[keep] |> list(),
+          nearby_weights = updated_weights |> list()
+        )
+      }
+    )
+  return(coverages)
 }
 
 get_covered <- function(install_at, to_cover, cover_distance) {
