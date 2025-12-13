@@ -1,90 +1,77 @@
-
-optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units::set_units("km")) {
+#' @importFrom rlang :=
+optimize_coverage <- function(install_at, to_cover, cover_distance = 25 |> units::set_units("km"), weight_column = ".weight") {
   # add generic id for tracking
   to_cover <- to_cover |>
     dplyr::mutate(.id = dplyr::row_number())
 
-  # Determine which of to_cover are covered by each location
-  distances <- to_cover |> 
-    sf::st_distance(install_at)
-  coverages <- distances |>
-    # Convert to data frame
-    as.data.frame() |>
-    setNames(seq_len(nrow(install_at))) |> 
-    dplyr::mutate(to_cover_id = to_cover$.id) |>
-    tidyr::pivot_longer(
-      cols = -"to_cover_id",
-      names_to = "location_id",
-      values_to = "dist",
-      names_transform = as.numeric
-    ) |>
+  # Determine which of to_cover are covered by each install_at
+  coverages <- to_cover |> 
+    sf::st_is_within_distance(y = install_at, dist = cover_distance) |>
+    tibble::enframe(name = "to_cover_id", value = "matches") |>
+    tidyr::unnest(matches) |>
+    dplyr::rename(install_at_id = matches) |>
     # include weighting column if present
     dplyr::left_join(
-      to_cover |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of("total")), 
+      to_cover |> handyr::sf_as_df() |> dplyr::select(".id", dplyr::any_of(weight_column)), 
       by = c(to_cover_id = ".id")
     )
+  
   # Add weighting column if not already present
-  if(! "total" %in% names(coverages)) {
+  if(! weight_column %in% names(coverages)) {
+    warning("No `weight_column` column found in `to_cover`, assuming equal weighting of points to cover.")
     coverages <- coverages |>
-      dplyr::mutate(total = 1)
+      dplyr::mutate(!!weight_column := 1)
   }
-  # Join all communities near each location into a single entry per location
+  # Join all to_cover near each location into a single entry per location
   # ie: 3 rows (1 for each nearby community) for a site -> 1 row with a column
   #   that has all 3 community ids pasted together with a "|" between
   coverages <- coverages |>
-    dplyr::group_by("location_id") |> # for each location
-    dplyr::filter(.data$dist <= cover_distance) |> # drop to_cover outside coverage range
+    dplyr::group_by(.data$install_at_id) |> # for each `install_at` point
     dplyr::summarise(
-      n = .data$total |> sum(),
-      nearby_totals = .data$total |> paste(collapse = "|"),
-      nearby_ids = .data$to_cover_id |> paste(collapse = "|")
+      n = .data[[weight_column]] |> sum(),
+      nearby_weights = .data[[weight_column]] |> list(),
+      nearby_ids = .data$to_cover_id |> list()
     )
 
   # Keep placing `install_at` w/ best coverage until no more `to_cover` to cover
   optimized_locations <- list()
-  while (sum(coverages$n) != 0 & length(optimized_locations) < nrow(install_at)) {
+  while(sum(coverages$n) != 0 & length(optimized_locations) < nrow(install_at)) {
     # Store the location with best coverage
-    coverages <- coverages |> dplyr::arrange(dplyr::desc(.data$n))
+    coverages <- coverages |> 
+      dplyr::arrange(dplyr::desc(.data$n)) |> 
+      dplyr::filter(.data$n != 0)
     optimized_locations <- optimized_locations |>
       c(list(coverages[1, ]))
-    # Get to_cover now covered by that location
-    newly_covered <- stringr::str_split(
-      string = coverages$nearby_ids[1],
-      pattern ="\\|", 
-      simplify = TRUE
-    )[1, ]
-    # Remove those from the nearby_ids list, and adjust nearby counts and totals
+    newly_covered <- coverages$nearby_ids[[1]]
+    coverages <- coverages[-1, ]
+    if (nrow(coverages) == 0) {
+      break
+    } 
+
+    # Remove those from the nearby_ids list, and adjust nearby counts and weights
     # (eventually this will stop the loop once all are covered)
-    coverages[, c("n", "nearby_totals", "nearby_ids")] <- seq_len(nrow(coverages)) |> 
+    coverages[, c("n", "nearby_ids", "nearby_weights")] <- coverages$nearby_ids |> 
       handyr::for_each( 
         .bind = TRUE,
-        \(i) {
-          current_nearby <- stringr::str_split(
-            string = coverages$nearby_ids[i],
-            pattern = "\\|", 
-            simplify = TRUE
-          )[1, ]
-          current_totals <- stringr::str_split(
-            string = coverages$nearby_totals[i],
-            pattern = "\\|", 
-            simplify = TRUE
-          )[1, ] |>
-            as.numeric()
-          updated_nearby <- current_nearby[!current_nearby %in% newly_covered]
-          updated_totals <- current_totals[!current_nearby %in% newly_covered]
-          if (length(updated_nearby) == 1) if (updated_nearby == "") updated_nearby <- character(0)
-          if (length(updated_totals) == 1) if (is.na(updated_totals)) updated_totals <- numeric(0)
-          data.frame(
-            n = updated_totals |> sum(),
-            nearby_totals = updated_totals |> paste(collapse = "|"),
-            nearby_ids = updated_nearby |> paste(collapse = "|")
+        .enumerate = TRUE,
+        .show_progress = FALSE,
+        \(current_nearby, i) {
+          current_weights <- coverages$nearby_weights[[i]]
+          keep <- !current_nearby %in% newly_covered
+          updated_nearby <- current_nearby[keep]
+          updated_weights <- current_weights[keep]
+          updated_n <- sum(updated_weights)
+          list(
+            n = updated_weights |> sum(),
+            nearby_ids = updated_nearby |> list(),
+            nearby_weights = updated_weights |> list()
           )
         } 
       )
   }
-  # Return locations of suggested monitors
+  # Return selected install_at points
   rows <- optimized_locations |>
     dplyr::bind_rows() |>
-    dplyr::pull(location_id) 
+    dplyr::pull(install_at_id) 
   install_at[rows, ]
 }
