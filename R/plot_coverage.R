@@ -1,3 +1,35 @@
+#' Plot the coverage of a set of installations over a set of points.
+#'
+#' @param install_at An `sf` data frame containing locations of potential installations.
+#' @param to_cover An `sf` data frame containing the locations desired to be covered by `install_at` within `cover_distance`.
+#' @param existing_locations An `sf` data frame containing the locations of existing installations.
+#'    Defaults to `NULL` - no existing locations will be plotted.
+#' @param optimized_locations An `sf` data frame containing the optimized locations for installation.
+#'   Defaults to `NULL` - no optimized locations will be plotted.
+#' @param cover_distance The distance from an installation that a location is considered to be covered.
+#'   Expected to be a `units` object, otherwise a `numeric` which is assumed to be in km.
+#'   Defaults to 25 km.
+#' @param weight_columns A character vector containing the names of the columns in `install_at` and `to_cover`
+#'   that was used as weights when optimizing the coverage of each potential installation.
+#' @param background_map A `ggplot` object containing the base map of the plot.
+#'   If provided, the coverage will be plotted on top of this map.
+#'   Defaults to `NULL` - a blank plot will be used.
+#' @param in_canada A logical indicating whether the coverage should be plotted over a map of Canada.
+#'   If `TRUE`, a background map of Canada will be generated if `background_map` is `NULL`, and the plot will be projected using a Canada-specific projection.
+#'   Defaults to `FALSE`.
+#' @param colours A list containing the fill colours for coverage and installation locations.
+#'   Must be length 4 and have names `to_cover`, `existing`, `proposed`, and `others`.
+#'   Defaults to `list(to_cover = "#FC4E07", existing = "#00AFBB", proposed = "#E7B800", others = "black")`.
+#' @param fill_labels A list containing the labels to display in the legend got the coloured layers.
+#'   Must be length 4 and have names `to_cover`, `existing`, `proposed`, and `others`.
+#'   Defaults to `list(to_cover = "To Cover", existing = "Existing", proposed = "Proposed", others = "Others")`.
+#' @param fill_opacity A numeric between 0 and 1 indicating the opacity of the coverage layers.
+#'   Defaults to 0.7.
+#' @param point_shape The shape to use for the non-prioritized installation locations.
+#'   Defaults to 21 (a filled circle).
+#' @param stroke_colour The colour to use for strokes throughout the plot.
+#' @return A `ggplot` object containing the coverage of the installations over the points.
+#' @export
 plot_coverage <- function(
   install_at,
   to_cover,
