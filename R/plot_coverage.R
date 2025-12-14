@@ -132,7 +132,7 @@ plot_coverage <- function(
       fill_opacity = fill_opacity,
       point_shape = point_shape,
       stroke_colour = stroke_colour
-    ) |> 
+    ) |>
     # Adjust theming, projection, etc
     format_coverage_map(
       colours = colours,
@@ -234,7 +234,14 @@ add_coverage_layers <- function(
   return(coverage_map)
 }
 
-format_coverage_map <- function(coverage_map, point_shape, colours, fill_labels, weight_columns, in_canada = FALSE) {
+format_coverage_map <- function(
+  coverage_map,
+  point_shape,
+  colours,
+  fill_labels,
+  weight_columns,
+  in_canada = FALSE
+) {
   axis_expand <- ggplot2::expansion(0.01)
   coverage_map_pretty <- coverage_map +
     ggplot2::scale_fill_manual(

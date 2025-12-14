@@ -44,8 +44,10 @@ test_that("real case works", {
         "2016 Population\n(To Cover)" = "total_population"
       ),
       in_canada = TRUE
-    ) |> 
-    expect_s3_class("ggplot") |> 
-    expect_warning("attribute variables are assumed to be spatially constant throughout all geometries") |> # TODO: fix?
+    ) |>
+    expect_s3_class("ggplot") |>
+    expect_warning(
+      "attribute variables are assumed to be spatially constant throughout all geometries"
+    ) |> # TODO: fix?
     expect_silent()
 })
