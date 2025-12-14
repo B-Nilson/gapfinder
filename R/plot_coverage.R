@@ -255,7 +255,7 @@ format_coverage_map <- function(coverage_map, point_shape, colours, fill_labels,
     ggpubr::theme_pubr(border = TRUE) +
     ggplot2::theme(
       panel.grid.major = ggplot2::element_line(
-        colour = "black",
+        colour = "grey",
         linewidth = 0.1
       ),
       legend.position = "right",
