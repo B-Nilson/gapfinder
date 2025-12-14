@@ -285,4 +285,5 @@ format_coverage_map <- function(coverage_map, point_shape, colours, fill_labels,
         default = TRUE
       )
   }
+  return(coverage_map_pretty)
 }
