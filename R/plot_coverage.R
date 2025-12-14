@@ -85,7 +85,10 @@ plot_coverage <- function(
   background_map |>
     # Add layers to map
     add_coverage_layers(
+      install_at = install_at,
       to_cover = to_cover,
+      existing_locations = existing_locations,
+      optimized_locations = optimized_locations,
       existing_coverage = existing_coverage,
       added_coverage = added_coverage,
       weight_columns = weight_columns,
@@ -97,6 +100,7 @@ plot_coverage <- function(
     # Adjust theming, projection, etc
     format_coverage_map(
       colours = colours,
+      point_shape = point_shape,
       fill_labels = fill_labels,
       weight_columns = weight_columns,
       in_canada = in_canada
@@ -105,7 +109,10 @@ plot_coverage <- function(
 
 add_coverage_layers <- function(
   map,
+  install_at,
   to_cover,
+  existing_locations,
+  optimized_locations,
   existing_coverage,
   added_coverage,
   weight_columns,
@@ -190,7 +197,7 @@ add_coverage_layers <- function(
   return(coverage_map)
 }
 
-format_coverage_map <- function(coverage_map, colours, fill_labels, weight_columns, in_canada = FALSE) {
+format_coverage_map <- function(coverage_map, point_shape, colours, fill_labels, weight_columns, in_canada = FALSE) {
   axis_expand <- ggplot2::expansion(0.01)
   coverage_map_pretty <- coverage_map +
     ggplot2::scale_fill_manual(
