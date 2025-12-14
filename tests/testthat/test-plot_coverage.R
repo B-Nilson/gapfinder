@@ -21,14 +21,31 @@ test_that("real case works", {
     dplyr::select(site_id = sensor_index, network, lng, lat, name = monitor) |>
     sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
 
+  cover_distance <- units::set_units(25, "km")
+
   # Find the optimal locations to get all YT population within 10 km of a monitor
   # Coverage depends on population x ease of install
   optimized_locations <- install_at |>
     optimize_coverage(
       to_cover = to_cover,
       existing_locations = existing_locations,
-      cover_distance = units::set_units(10, "km"),
+      cover_distance = cover_distance,
       weight_columns = c("ease_of_install", "total_population")
-    ) |>
+    )
+
+  install_at |>
+    plot_coverage(
+      to_cover = to_cover,
+      existing_locations = existing_locations,
+      optimized_locations = optimized_locations,
+      cover_distance = cover_distance,
+      weight_columns = c(
+        "Ease of Install\n(Community Type)" = "ease_of_install",
+        "2016 Population\n(To Cover)" = "total_population"
+      ),
+      in_canada = TRUE
+    ) |> 
+    expect_s3_class("ggplot") |> 
+    expect_warning("attribute variables are assumed to be spatially constant throughout all geometries") |> # TODO: fix?
     expect_silent()
 })
