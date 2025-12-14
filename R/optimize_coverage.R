@@ -96,6 +96,10 @@ optimize_coverage <- function(
     to_cover <- to_cover |>
       dplyr::filter(!.data$.id %in% covered_by_existing) |>
       dplyr::mutate(.id = dplyr::row_number())
+    if (nrow(to_cover) == 0) {
+      warning("All `to_cover` are already covered by `existing_locations`.")
+      return(install_at |> dplyr::filter(FALSE))
+    }
   }
 
   # Determine which of to_cover are covered by each `install_at`
@@ -191,7 +195,7 @@ add_weight_column <- function(
 
   coverages |>
     dplyr::mutate(
-      weight = .data[[names(weight_columns)[1]]] +
+      weight = .data[[names(weight_columns)[1]]] *
         .data[[names(weight_columns)[2]]]
     )
 }
