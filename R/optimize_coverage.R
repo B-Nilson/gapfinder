@@ -195,7 +195,7 @@ add_weight_column <- function(
 
   coverages |>
     dplyr::mutate(
-      weight = .data[[names(weight_columns)[1]]] +
+      weight = .data[[names(weight_columns)[1]]] *
         .data[[names(weight_columns)[2]]]
     )
 }
