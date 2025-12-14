@@ -71,103 +71,81 @@ optimized_locations <- install_at |>
   optimize_coverage(
     to_cover = to_cover,
     existing_locations = existing_locations,
-    cover_distance = units::set_units(10, "km"),
+    cover_distance = units::set_units(25, "km"),
     weight_columns = c("ease_of_install", "total_population")
   )
 
 # View the results
-install_at |> print()
-#> Simple feature collection with 66 features and 5 fields
-#> Geometry type: POINT
-#> Dimension:     XY
-#> Bounding box:  xmin: -140.8773 ymin: 60.00194 xmax: -128.7068 ymax: 68.98877
-#> Geodetic CRS:  WGS 84
-#> # A tibble: 66 × 6
-#>    name      type  prov_terr fcst_zone             geometry ease_of_install
-#>  * <chr>     <fct> <fct>     <chr>              <POINT [°]>           <dbl>
-#>  1 Whitehor… city  YT        Whitehor… (-135.0549 60.72157)               4
-#>  2 Carcross  town  YT        Whitehor… (-134.7087 60.16679)               3
-#>  3 Carmacks  town  YT        Pelly - … (-136.2899 62.08877)               3
-#>  4 Dawson C… town  YT        Dawson    (-139.4317 64.06066)               3
-#>  5 Faro      town  YT        Faro - R… (-133.3553 62.22954)               3
-#>  6 Mayo      town  YT        Mayo      (-135.8961 63.59269)               3
-#>  7 Ross Riv… town  YT        Faro - R…  (-132.4495 61.9798)               3
-#>  8 Watson L… town  YT        Watson L… (-128.7068 60.06243)               3
-#>  9 Haines J… vill… YT        Haines J…   (-137.51 60.75272)               2
-#> 10 Mount Lo… vill… YT        Whitehor… (-134.8568 60.44817)               2
-#> # ℹ 56 more rows
-to_cover |> print()
-#> Simple feature collection with 105 features and 5 fields
-#> Geometry type: POINT
-#> Dimension:     XY
-#> Bounding box:  xmin: -140.9239 ymin: 60.0065 xmax: -128.6312 ymax: 67.6117
-#> Geodetic CRS:  WGS 84
-#> # A tibble: 105 × 6
-#>    prov_terr fcst_zone         total_land_area total_population rural_population
-#>  * <chr>     <chr>                      [km^2]            <int>            <int>
-#>  1 YT        Haines Junction              94.3               20               20
-#>  2 YT        Kluane Lake                  94.4               50               50
-#>  3 YT        Kluane Lake                  42                 55               55
-#>  4 YT        Kluane Lake                  41.8               70               70
-#>  5 YT        Kluane Lake                  94.2                5                5
-#>  6 YT        Beaver Creek,Klu…            94.2               15               15
-#>  7 YT        Beaver Creek,Klu…            94.1               25               25
-#>  8 YT        Beaver Creek                 85.3               85               85
-#>  9 YT        Beaver Creek                 94.1                5                5
-#> 10 YT        Pelly - Carmacks…            94.1               20               20
-#> # ℹ 95 more rows
-#> # ℹ 1 more variable: geometry <POINT [°]>
-existing_locations |> print()
-#> Simple feature collection with 2877 features and 3 fields
-#> Geometry type: POINT
-#> Dimension:     XY
-#> Bounding box:  xmin: -166.07 ymin: 41.28884 xmax: -52.71147 ymax: 71.98604
-#> Geodetic CRS:  WGS 84
-#> First 10 features:
-#>    site_id network                               name
-#> 1    85493      PA                         EAS_PA_034
-#> 2   228711      PA                       EPL Feed LLc
-#> 3   131991      PA AQSU-E63E, Lillooet Municipal Yard
-#> 4   235975      PA                       St. Clements
-#> 5    59777      PA                      Tetlin NWR HQ
-#> 6   232453      PA     1327 Hwy 25 S, Kettle falls WA
-#> 7   127005      PA    Copper River Native Association
-#> 8    79343      PA                     WCAS_Lodgepole
-#> 9   262993      PA                      Varsity Creek
-#> 10  244739      PA                     Heathfield Sub
-#>                      geometry
-#> 1  POINT (-139.4264 64.06696)
-#> 2  POINT (-122.2688 48.99162)
-#> 3  POINT (-121.9433 50.69153)
-#> 4  POINT (-80.65214 43.52306)
-#> 5  POINT (-143.0391 63.32384)
-#> 6  POINT (-118.0872 48.57004)
-#> 7  POINT (-145.4295 62.06746)
-#> 8   POINT (-115.317 53.10379)
-#> 9  POINT (-122.7749 53.87064)
-#> 10 POINT (-113.2009 53.85244)
-optimized_locations |> print()
-#> Simple feature collection with 15 features and 5 fields
-#> Geometry type: POINT
-#> Dimension:     XY
-#> Bounding box:  xmin: -139.2241 ymin: 60.0523 xmax: -128.7068 ymax: 64.02769
-#> Geodetic CRS:  WGS 84
-#> # A tibble: 15 × 6
-#>    name      type  prov_terr fcst_zone             geometry ease_of_install
-#>    <chr>     <fct> <fct>     <chr>              <POINT [°]>           <dbl>
-#>  1 Mount Lo… vill… YT        Whitehor… (-134.8568 60.44817)               2
-#>  2 Ross Riv… town  YT        Faro - R…  (-132.4495 61.9798)               3
-#>  3 McClinto… haml… YT        Whitehor…  (-134.5415 60.5672)               1
-#>  4 Takhini   haml… YT        Whitehor… (-135.5244 60.85375)               1
-#>  5 Upper Li… haml… YT        Watson L…  (-128.9121 60.0523)               1
-#>  6 Watson L… town  YT        Watson L… (-128.7068 60.06243)               3
-#>  7 Destruct… haml… YT        Kluane L… (-138.7998 61.25143)               1
-#>  8 Eureka C… haml… YT        Dawson    (-138.8768 63.58632)               1
-#>  9 Mendenha… haml… YT        Whitehor… (-136.0167 60.76667)               1
-#> 10 Stewart … vill… YT        Mayo       (-136.679 63.37544)               2
-#> 11 Bear Cre… haml… YT        Haines J… (-137.6682 60.79649)               1
-#> 12 Keno City haml… YT        Mayo      (-135.3022 63.90958)               1
-#> 13 Bear Cre… haml… YT        Dawson    (-139.2241 64.02769)               1
-#> 14 Clear Cr… haml… YT        Mayo      (-137.2788 63.78159)               1
-#> 15 Jakes Co… haml… YT        Whitehor… (-133.9859 60.33931)               1
+install_at |> summary()
+#>      name                type      prov_terr   fcst_zone        
+#>  Length:66          city   : 1   YT     :66   Length:66         
+#>  Class :character   town   : 7   BC     : 0   Class :character  
+#>  Mode  :character   village: 7   AB     : 0   Mode  :character  
+#>                     hamlet :51   SK     : 0                     
+#>                                  MB     : 0                     
+#>                                  ON     : 0                     
+#>                                  (Other): 0                     
+#>           geometry  ease_of_install
+#>  POINT        :66   Min.   :1.000  
+#>  epsg:4326    : 0   1st Qu.:1.000  
+#>  +proj=long...: 0   Median :1.000  
+#>                     Mean   :1.364  
+#>                     3rd Qu.:1.000  
+#>                     Max.   :4.000  
+#> 
+to_cover |> summary()
+#>   prov_terr          fcst_zone         total_land_area total_population 
+#>  Length:105         Length:105         Min.   :41.80   Min.   :    5.0  
+#>  Class :character   Class :character   1st Qu.:90.30   1st Qu.:   15.0  
+#>  Mode  :character   Mode  :character   Median :94.00   Median :   45.0  
+#>                                        Mean   :89.66   Mean   :  341.3  
+#>                                        3rd Qu.:94.30   3rd Qu.:  130.0  
+#>                                        Max.   :94.50   Max.   :17175.0  
+#>  rural_population          geometry  
+#>  Min.   :   5.0   POINT        :105  
+#>  1st Qu.:  15.0   epsg:4326    :  0  
+#>  Median :  45.0   +proj=long...:  0  
+#>  Mean   : 134.3                      
+#>  3rd Qu.: 130.0                      
+#>  Max.   :1450.0
+existing_locations |> summary()
+#>    site_id            network              name                    geometry   
+#>  Length:2877        Length:2877        Length:2877        POINT        :2877  
+#>  Class :character   Class :character   Class :character   epsg:4326    :   0  
+#>  Mode  :character   Mode  :character   Mode  :character   +proj=long...:   0
+optimized_locations |> summary()
+#>      name                type     prov_terr   fcst_zone        
+#>  Length:10          city   :0   YT     :10   Length:10         
+#>  Class :character   town   :1   BC     : 0   Class :character  
+#>  Mode  :character   village:1   AB     : 0   Mode  :character  
+#>                     hamlet :8   SK     : 0                     
+#>                                 MB     : 0                     
+#>                                 ON     : 0                     
+#>                                 (Other): 0                     
+#>           geometry  ease_of_install
+#>  POINT        :10   Min.   :1.0    
+#>  epsg:4326    : 0   1st Qu.:1.0    
+#>  +proj=long...: 0   Median :1.0    
+#>                     Mean   :1.3    
+#>                     3rd Qu.:1.0    
+#>                     Max.   :3.0    
+#> 
+
+# Map the results
+plot_coverage(
+  install_at = install_at,
+  to_cover = to_cover,
+  existing_locations = existing_locations,
+  optimized_locations = optimized_locations,
+  cover_distance = units::set_units(25, "km"),
+  weight_columns = c(
+    "Ease of Install\n(Community Type)" = "ease_of_install",
+    "2016 Population\n(To Cover)" = "total_population"
+  ),
+  in_canada = TRUE
+) |> print()
+#> Warning: attribute variables are assumed to be spatially constant throughout
+#> all geometries
 ```
+
+<img src="man/figures/README-example-1.png" width="100%" />

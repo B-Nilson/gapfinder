@@ -76,14 +76,28 @@ optimized_locations <- install_at |>
   optimize_coverage(
     to_cover = to_cover,
     existing_locations = existing_locations,
-    cover_distance = units::set_units(10, "km"),
+    cover_distance = units::set_units(25, "km"),
     weight_columns = c("ease_of_install", "total_population")
   )
 
 # View the results
-install_at |> print()
-to_cover |> print()
-existing_locations |> print()
-optimized_locations |> print()
+install_at |> summary()
+to_cover |> summary()
+existing_locations |> summary()
+optimized_locations |> summary()
+
+# Map the results
+plot_coverage(
+  install_at = install_at,
+  to_cover = to_cover,
+  existing_locations = existing_locations,
+  optimized_locations = optimized_locations,
+  cover_distance = units::set_units(25, "km"),
+  weight_columns = c(
+    "Ease of Install\n(Community Type)" = "ease_of_install",
+    "2016 Population\n(To Cover)" = "total_population"
+  ),
+  in_canada = TRUE
+) |> print()
 
 ```
