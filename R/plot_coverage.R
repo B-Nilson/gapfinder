@@ -172,6 +172,7 @@ add_coverage_layers <- function(
   if (!is.null(existing_locations)) {
     coverage_map <- coverage_map +
       ggplot2::geom_sf(
+        shape = 21, # throws warning otherwise
         data = existing_coverage,
         colour = stroke_colour,
         ggplot2::aes(fill = fill_labels$existing),
