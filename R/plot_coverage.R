@@ -76,10 +76,14 @@ plot_coverage <- function(
       existing_locations$.id %in% provides_coverage,
     ]
 
-    # Get existing coverage
-    existing_coverage <- existing_locations |>
-      sf::st_buffer(dist = cover_distance) |>
-      sf::st_union()
+    if (nrow(existing_locations) == 0) {
+      existing_locations <- NULL
+    } else {
+      # Get existing coverage
+      existing_coverage <- existing_locations |>
+        sf::st_buffer(dist = cover_distance) |>
+        sf::st_union()
+    }
   }
 
   # Find added coverage if provided
