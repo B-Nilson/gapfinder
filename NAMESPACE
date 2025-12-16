@@ -2,5 +2,6 @@
 
 export(optimize_coverage)
 export(plot_coverage)
+export(prioritize_installations)
 importFrom(rlang,":=")
 importFrom(rlang,.data)
