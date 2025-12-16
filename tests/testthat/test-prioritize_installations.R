@@ -13,11 +13,12 @@ test_that("test case works", {
 
   # Prioritize installations and find newly added coverage if installed in priority order
   population_types <- c("rural_population", "urban_population")
-  prioritized_locations <- test_case$install_at |>
+  community_types <- levels(test_case$install_at$type)[!levels(test_case$install_at$type) %in% population_types]
+  prioritized_locations <- optimized_locations |>
     prioritize_installations(
       to_cover = test_case$to_cover |>
         dplyr::filter(type %in% population_types) |>
-        dplyr::group_by(type),
+        dplyr::group_by(type = factor(type, levels = population_types)),
       cover_distance = test_case$cover_distance,
       weight_columns = test_case$weight_columns,
       suffix = "_population"
@@ -25,7 +26,7 @@ test_that("test case works", {
     prioritize_installations(
       to_cover = test_case$to_cover |>
         dplyr::filter(!type %in% population_types) |>
-        dplyr::group_by(type),
+        dplyr::group_by(type = factor(type, levels = community_types)),
       cover_distance = test_case$cover_distance,
       weight_columns = test_case$weight_columns,
       suffix = "_communities"
