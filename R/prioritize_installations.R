@@ -21,14 +21,26 @@ prioritize_installations <- function(
   # Handle weight columns
   if (length(weight_columns) == 1) {
     weight_columns <- rep(weight_columns, 2)
+  } 
+  names(weight_columns) <- c("install_at_weight", "to_cover_weight")
+  
+  # Add default constant `install_at` weighting column if not already present
+  if (!weight_columns[1] %in% names(install_at)) {
+    warning(
+      "No `weight_columns[1]` column found in `install_at`, assuming equal weighting of points to cover."
+    )
+    install_at <- install_at |>
+      dplyr::mutate(!!weight_columns[1] := 1)
   }
-  if (!weight_columns[1] %in% names(to_cover)) {
-    to_cover[weight_columns[1]] <- 1
+
+  # Add default constant `to_cover` weighting column if not already present
+  if (!weight_columns[2] %in% names(to_cover)) {
+    warning(
+      "No `weight_columns[2]` column found in `to_cover`, assuming equal weighting of installation locations."
+    )
+    to_cover <- to_cover |>
+      dplyr::mutate(!!weight_columns[2] := 1)
   }
-  if (!weight_columns[2] %in% names(install_at)) {
-    install_at[weight_columns[2]] <- 1
-  }
-  names(weight_columns) <- c("to_cover_weight", "install_at_weight")
 
   # Determine which "to_cover" are in range of each `install_at`
   coverages <- to_cover |>
@@ -55,7 +67,7 @@ prioritize_installations <- function(
   new_coverage <- install_at[coverages$install_at_id, ] |>
     dplyr::select(
       install_at_id = ".id",
-      dplyr::any_of(weight_columns[2])
+      dplyr::any_of(weight_columns[1])
     ) |>
     handyr::sf_as_df(keep_coords = FALSE) |>
     dplyr::mutate(to_cover_id = coverages$to_cover_id) |>
@@ -65,7 +77,7 @@ prioritize_installations <- function(
         dplyr::mutate(to_cover_id = dplyr::row_number()) |>
         dplyr::select(
           "to_cover_id",
-          dplyr::any_of(c(weight_columns[1], to_cover_groups))
+          dplyr::any_of(c(weight_columns[2], to_cover_groups))
         ) |>
         handyr::sf_as_df(keep_coords = FALSE),
       by = "to_cover_id"

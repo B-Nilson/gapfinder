@@ -79,7 +79,7 @@ optimize_coverage <- function(
   if (length(weight_columns) == 1) {
     weight_columns <- rep(weight_columns, 2)
   }
-  names(weight_columns) <- c("to_cover_weight", "install_at_weight")
+  names(weight_columns) <- c("install_at_weight", "to_cover_weight")
 
   # add generic id for tracking
   to_cover <- to_cover |>
@@ -106,8 +106,8 @@ optimize_coverage <- function(
   coverages <- install_at |>
     get_covered(to_cover = to_cover, cover_distance = cover_distance) |>
     add_weight_column(
-      to_cover = to_cover,
       install_at = install_at,
+      to_cover = to_cover,
       weight_columns = weight_columns
     )
 
@@ -156,8 +156,8 @@ get_covered <- function(install_at, to_cover, cover_distance) {
 
 add_weight_column <- function(
   coverages,
-  to_cover,
   install_at,
+  to_cover,
   weight_columns
 ) {
   # include weighting columns if present in data
@@ -175,19 +175,19 @@ add_weight_column <- function(
       by = c(to_cover_id = ".id")
     )
 
-  # Add default constant `to_cover` weighting column if not already present
+  # Add default constant `install_at` weighting column if not already present
   if (!names(weight_columns[1]) %in% names(coverages)) {
     warning(
-      "No `weight_columns[1]` column found in `to_cover`, assuming equal weighting of points to cover."
+      "No `weight_columns[1]` column found in `install_at`, assuming equal weighting of points to cover."
     )
     coverages <- coverages |>
       dplyr::mutate(!!names(weight_columns[1]) := 1)
   }
 
-  # Add default constant `install_at` weighting column if not already present
+  # Add default constant `to_cover` weighting column if not already present
   if (!names(weight_columns[2]) %in% names(coverages)) {
     warning(
-      "No `weight_columns[2]` column found in `install_at`, assuming equal weighting of installation locations."
+      "No `weight_columns[2]` column found in `to_cover`, assuming equal weighting of installation locations."
     )
     coverages <- coverages |>
       dplyr::mutate(!!names(weight_columns[2]) := 1)
