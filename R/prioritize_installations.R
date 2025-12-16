@@ -101,8 +101,7 @@ prioritize_installations <- function(
           covered = list(unlist(.data$covered)),
           dplyr::across(
             dplyr::starts_with("newly_covered_"),
-            sum,
-            na.rm = TRUE
+            \(x) sum(x, na.rm = TRUE)
           ),
         ) |>
         dplyr::mutate(
