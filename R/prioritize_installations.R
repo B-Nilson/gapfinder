@@ -6,7 +6,14 @@ prioritize_installations <- function(
   suffix = ""
 ) {
   if (nrow(install_at) == 0 | nrow(to_cover) == 0) {
-    return(NULL)
+    warning("No entries in either `install_at` or `to_cover`")
+    return(
+      install_at |>
+        dplyr::mutate(
+          !!paste0("newly_covered", suffix) := 0,
+          !!paste0("priority", suffix) := NA_integer_
+        )
+    )
   }
 
   # Handle weight columns
