@@ -27,7 +27,7 @@ test_that("real case works", {
       suffix = "_population"
     ) |>
     prioritize_installations(
-      to_cover = to_cover |> dplyr::filter(type != "population"),
+      to_cover = to_cover |> dplyr::filter(type != "population") |> dplyr::group_by(type),
       cover_distance = units::set_units(10, "km"),
       weight_columns = c("total_population", "ease_of_install"),
       suffix = "_communities"

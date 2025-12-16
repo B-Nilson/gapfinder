@@ -49,6 +49,7 @@ prioritize_installations <- function(
 
   # Get coverage information - will be altered as installations are placed
   install_at <- install_at |> dplyr::mutate(.id = dplyr::row_number())
+  to_cover_groups <- as.character(dplyr::groups(to_cover))
   new_coverage <- install_at[coverages$install_at_id, ] |>
     dplyr::select(
       install_at_id = ".id",
@@ -58,8 +59,12 @@ prioritize_installations <- function(
     dplyr::mutate(to_cover_id = coverages$to_cover_id) |>
     dplyr::left_join(
       to_cover |>
+        dplyr::ungroup() |>
         dplyr::mutate(to_cover_id = dplyr::row_number()) |>
-        dplyr::select("to_cover_id", dplyr::any_of(weight_columns[1])) |>
+        dplyr::select(
+          "to_cover_id",
+          dplyr::any_of(c(weight_columns[1], to_cover_groups))
+        ) |>
         handyr::sf_as_df(keep_coords = FALSE),
       by = "to_cover_id"
     )
@@ -70,13 +75,41 @@ prioritize_installations <- function(
   for (i in seq_len(nrow(install_at))) {
     # Find best coverage
     best_coverage <- new_coverage |>
-      dplyr::group_by(.data$install_at_id) |>
+      dplyr::group_by(
+        .data$install_at_id,
+        dplyr::pick(dplyr::any_of(to_cover_groups))
+      ) |>
       dplyr::summarise(
         to_cover_weight = sum(.data$to_cover_weight),
         weight = sum(.data$to_cover_weight * .data$install_at_weight),
         covered = list(.data$to_cover_id),
         .groups = "drop"
-      ) |>
+      )
+
+    if (length(to_cover_groups) > 0) {
+      best_coverage <- best_coverage |>
+        tidyr::pivot_wider(
+          names_from = dplyr::all_of(to_cover_groups),
+          values_from = "to_cover_weight",
+          names_glue = "newly_covered_{.name}{suffix}"
+        ) |>
+        dplyr::group_by(.data$install_at_id) |>
+        dplyr::summarise(
+          weight = sum(.data$weight),
+          covered = list(unlist(.data$covered)),
+          dplyr::across(
+            dplyr::starts_with("newly_covered_"),
+            sum,
+            na.rm = TRUE
+          ),
+        ) |>
+        dplyr::mutate(
+          to_cover_weight = rowSums(dplyr::across(dplyr::starts_with(
+            "newly_covered_"
+          )))
+        )
+    }
+    best_coverage <- best_coverage |>
       dplyr::arrange(dplyr::desc(.data$weight)) |>
       dplyr::slice(1)
 
@@ -89,6 +122,11 @@ prioritize_installations <- function(
       dplyr::filter(.data$.id == best_coverage$install_at_id) |>
       dplyr::mutate(
         !!paste0("newly_covered", suffix) := best_coverage$to_cover_weight
+      ) |>
+      dplyr::left_join(
+        best_coverage |>
+          dplyr::select(install_at_id, dplyr::starts_with("newly_covered_")),
+        by = c(.id = "install_at_id")
       )
 
     # Stop if no more coverage
@@ -106,7 +144,10 @@ prioritize_installations <- function(
         dplyr::filter(!.data$.id %in% priority$.id) |>
         dplyr::mutate(!!paste0("newly_covered", suffix) := 0)
     ) |>
-    dplyr::select(-".id")
+    dplyr::select(-".id") |>
+    dplyr::mutate(dplyr::across(dplyr::starts_with("newly_covered_"), \(x) {
+      handyr::swap(x, what = NA, with = 0)
+    }))
 
   # add priorities
   priority |>
