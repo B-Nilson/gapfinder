@@ -126,7 +126,7 @@ prioritize_installations <- function(
       ) |>
       dplyr::left_join(
         best_coverage |>
-          dplyr::select(install_at_id, dplyr::starts_with("newly_covered_")),
+          dplyr::select("install_at_id", dplyr::starts_with("newly_covered_")),
         by = c(.id = "install_at_id")
       )
 
