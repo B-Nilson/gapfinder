@@ -1,5 +1,6 @@
 test_that("test case works", {
-  test_case <- readRDS("tests/testthat/fixtures/test-case.rds")
+  test_case <- test_path("fixtures", "test-case.rds") |>
+    readRDS()
 
   # Find the optimal install locations
   optimized_locations <- test_case$install_at |>
@@ -10,7 +11,7 @@ test_that("test case works", {
       weight_columns = test_case$weight_columns
     )
 
-  install_at |>
+  test_case$install_at |>
     plot_coverage(
       to_cover = test_case$to_cover,
       existing_locations = test_case$existing_locations,
