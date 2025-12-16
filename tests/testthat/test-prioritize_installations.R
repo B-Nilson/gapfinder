@@ -13,7 +13,9 @@ test_that("test case works", {
 
   # Prioritize installations and find newly added coverage if installed in priority order
   population_types <- c("rural_population", "urban_population")
-  community_types <- levels(test_case$install_at$type)[!levels(test_case$install_at$type) %in% population_types]
+  community_types <- levels(test_case$install_at$type)[
+    !levels(test_case$install_at$type) %in% population_types
+  ]
   prioritized_locations <- optimized_locations |>
     prioritize_installations(
       to_cover = test_case$to_cover |>

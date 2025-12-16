@@ -21,9 +21,9 @@ prioritize_installations <- function(
   # Handle weight columns
   if (length(weight_columns) == 1) {
     weight_columns <- rep(weight_columns, 2)
-  } 
+  }
   names(weight_columns) <- c("install_at_weight", "to_cover_weight")
-  
+
   # Add default constant `install_at` weighting column if not already present
   if (!weight_columns[1] %in% names(install_at)) {
     warning(
