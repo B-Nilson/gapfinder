@@ -1,5 +1,5 @@
 test_that("test case works", {
-  test_case <- test_path("fixtures", "test-case.rds") |> 
+  test_case <- test_path("fixtures", "test-case.rds") |>
     readRDS()
 
   optimized_locations <- test_case$install_at |>

@@ -31,6 +31,6 @@ test_that("test case works", {
       suffix = "_communities"
     ) |>
     expect_silent() |>
-    print(n = 100) |> 
+    print(n = 100) |>
     expect_snapshot()
 })
