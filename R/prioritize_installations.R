@@ -2,7 +2,6 @@ prioritize_installations <- function(
   install_at,
   to_cover,
   cover_distance = 25 |> units::set_units("km"),
-  drop_no_coverage = TRUE,
   suffix = ""
 ) {
   if (nrow(install_at) == 0 | nrow(to_cover) == 0) {
@@ -13,14 +12,16 @@ prioritize_installations <- function(
   coverages <- to_cover |>
     get_covered(install_at = install_at, cover_distance = cover_distance)
 
-  # Handle no coverage from any monitor
+  # Handle no coverage
   if (nrow(coverages) == 0) {
     warning("No coverage from any `install_at`")
-    if (drop_no_coverage) {
-      return(NULL)
-    } else {
-      return(install_at |> dplyr::mutate(newly_covered = 0)) # TODO: missing priority columns here and suffix
-    }
+    return(
+      install_at |>
+        dplyr::mutate(
+          !!paste0("newly_covered", suffix) := 0,
+          !!paste0("priority", suffix) := NA_integer_
+        )
+    )
   }
 
   # Get coverage information - will be altered as installations are placed
@@ -65,17 +66,13 @@ prioritize_installations <- function(
       break
     }
   }
-  priority <- dplyr::bind_rows(priority)
-
-  # Append remaining install_at if drop_no_coverage is FALSE
-  if (!drop_no_coverage) {
-    priority <- priority |>
-      dplyr::bind_rows(
-        install_at |>
-          dplyr::filter(!id %in% priority$id) |>
-          dplyr::mutate(newly_covered = 0)
-      )
-  }
+  priority <- dplyr::bind_rows(
+    priority,
+    # Append remaining install_at
+    install_at |>
+      dplyr::filter(!id %in% priority$id) |>
+      dplyr::mutate(!!paste0("newly_covered", suffix) := 0)
+  )
 
   # add priorities for each resolution
   new_cols <- c("newly_covered", "priority_provterr", "priority_canada")
