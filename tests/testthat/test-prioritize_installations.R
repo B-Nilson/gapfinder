@@ -1,35 +1,28 @@
 test_that("real case works", {
-  install_at <- canadata::communities |>
-    dplyr::filter(prov_terr == "YT") |>
-    sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84") |>
-    # Cities are easier to install than hamlets
-    # here they provide 4x more coverage (4 levels of type)
-    dplyr::mutate(ease_of_install = nlevels(type) + 1 - as.numeric(type))
+  test_case <- readRDS("tests/testthat/fixtures/test-case.rds")
 
-  # Define what we want the monitors to cover (Yukon population AND Yukon communities)
-  to_cover <- canadata::gridded_2016_population |>
-    dplyr::rename(prov_terr = "prov_terrs") |>
-    dplyr::mutate(type = "population") |>
-    dplyr::bind_rows(
-      canadata::communities |>
-        dplyr::mutate(total_population = 1)
-    ) |>
-    dplyr::filter(stringr::str_detect(prov_terr, "YT")) |> # any cell/community that intersects Yukon
-    sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
+  # Find the optimal install locations
+  optimized_locations <- test_case$install_at |>
+    optimize_coverage(
+      to_cover = test_case$to_cover,
+      existing_locations = test_case$existing_locations,
+      cover_distance = test_case$cover_distance,
+      weight_columns = test_case$weight_columns
+    )
 
-  # Find the optimal locations to get all YT population within 10 km of a monitor
-  # Coverage depends on population x ease of install
-  prioritized_locations <- install_at |>
+  # Prioritize installations and find newly added coverage if installed in priority order 
+  population_types <- c("rural_population", "urban_population")
+  prioritized_locations <- test_case$install_at |>
     prioritize_installations(
-      to_cover = to_cover |> dplyr::filter(type == "population"),
-      cover_distance = units::set_units(10, "km"),
-      weight_columns = c("total_population", "ease_of_install"),
+      to_cover = test_case$to_cover |> dplyr::filter(type %in% population_types) |> dplyr::group_by(type),
+      cover_distance = test_case$cover_distance,
+      weight_columns = test_case$weight_columns,
       suffix = "_population"
     ) |>
     prioritize_installations(
-      to_cover = to_cover |> dplyr::filter(type != "population") |> dplyr::group_by(type),
-      cover_distance = units::set_units(10, "km"),
-      weight_columns = c("total_population", "ease_of_install"),
+      to_cover = test_case$to_cover |> dplyr::filter(!type %in% population_types) |> dplyr::group_by(type),
+      cover_distance = test_case$cover_distance,
+      weight_columns = test_case$weight_columns,
       suffix = "_communities"
     ) |> 
     expect_silent() |> 
