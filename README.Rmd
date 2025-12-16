@@ -61,7 +61,7 @@ install_at <- canadata::communities |>
 
 # Define what we want the monitors to cover (Yukon population)
 to_cover <- canadata::gridded_2016_population |>
-  dplyr::filter(stringr::str_detect(prov_terr, "YT")) |> # any cell that intersects Yukon
+  dplyr::filter(stringr::str_detect(prov_terrs, "YT")) |> # any cell that intersects Yukon
   sf::st_as_sf(coords = c("lng", "lat"), crs = "WGS84")
 
 # Define existing monitors (Canadian PM2.5 monitoring network - NAPS, PurpleAir, and AQEgg networks)
