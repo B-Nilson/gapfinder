@@ -2,11 +2,24 @@ prioritize_installations <- function(
   install_at,
   to_cover,
   cover_distance = 25 |> units::set_units("km"),
+  weight_columns = c(".weight", ".weight"),
   suffix = ""
 ) {
   if (nrow(install_at) == 0 | nrow(to_cover) == 0) {
     return(NULL)
   }
+
+  # Handle weight columns
+  if (length(weight_columns) == 1) {
+    weight_columns <- rep(weight_columns, 2)
+  }
+  if (!weight_columns[1] %in% names(to_cover)) {
+    to_cover[weight_columns[1]] <- 1
+  }
+  if (!weight_columns[2] %in% names(install_at)) {
+    install_at[weight_columns[2]] <- 1
+  }
+  names(weight_columns) <- c("to_cover_weight", "install_at_weight")
 
   # Determine which "to_cover" are in range of each `install_at`
   coverages <- to_cover |>
@@ -25,14 +38,18 @@ prioritize_installations <- function(
   }
 
   # Get coverage information - will be altered as installations are placed
+  install_at <- install_at |> dplyr::mutate(.id = dplyr::row_number())
   new_coverage <- install_at[coverages$install_at_id, ] |>
-    dplyr::select(install_at_id = id, install_at_type = type) |>
+    dplyr::select(
+      install_at_id = ".id",
+      dplyr::any_of(weight_columns[2])
+    ) |>
     handyr::sf_as_df(keep_coords = FALSE) |>
     dplyr::mutate(to_cover_id = coverages$to_cover_id) |>
     dplyr::left_join(
       to_cover |>
         dplyr::mutate(to_cover_id = dplyr::row_number()) |>
-        dplyr::select(to_cover_id, to_cover_type = type, total) |>
+        dplyr::select("to_cover_id", dplyr::any_of(weight_columns[1])) |>
         handyr::sf_as_df(keep_coords = FALSE),
       by = "to_cover_id"
     )
@@ -43,23 +60,24 @@ prioritize_installations <- function(
   for (i in seq_len(nrow(install_at))) {
     # Find best coverage
     best_coverage <- new_coverage |>
-      dplyr::group_by(install_at_id, install_at_type) |>
+      dplyr::group_by(.data$install_at_id) |>
       dplyr::summarise(
-        total = sum(total),
-        covered = list(to_cover_id),
+        to_cover_weight = sum(.data$to_cover_weight),
+        weight = sum(.data$to_cover_weight * .data$install_at_weight),
+        covered = list(.data$to_cover_id),
         .groups = "drop"
       ) |>
-      dplyr::arrange(dplyr::desc(total)) |>
+      dplyr::arrange(dplyr::desc(.data$weight)) |>
       dplyr::slice(1)
 
     # Drop the ones that covers from new_coverage (for next run)
     new_coverage <- new_coverage |>
-      dplyr::filter(!to_cover_id %in% unlist(best_coverage$covered))
+      dplyr::filter(!.data$to_cover_id %in% unlist(best_coverage$covered))
 
     # Place monitor where most covered
     priority[[i]] <- install_at |>
-      dplyr::filter(id == best_coverage$install_at_id) |>
-      dplyr::mutate(newly_covered = best_coverage$total)
+      dplyr::filter(.data$.id == best_coverage$install_at_id) |>
+      dplyr::mutate(newly_covered = best_coverage$to_cover_weight)
 
     # Stop if no more coverage
     if (nrow(new_coverage) == 0) {
@@ -68,31 +86,23 @@ prioritize_installations <- function(
   }
   priority <- priority |>
     dplyr::bind_rows()
-  
+
   # Append remaining install_at
   priority <- priority |>
     dplyr::bind_rows(
       install_at |>
-        dplyr::filter(!id %in% priority$id) |>
+        dplyr::filter(!.data$.id %in% priority$.id) |>
         dplyr::mutate(!!paste0("newly_covered", suffix) := 0)
-    )
+    ) |>
+    dplyr::select(-".id")
 
-  # add priorities for each resolution
-  new_cols <- c("newly_covered", "priority_provterr", "priority_canada")
+  # add priorities
   priority |>
-    # P/T priority
-    dplyr::arrange(prov_terr, desc(newly_covered)) |>
+    dplyr::arrange(dplyr::desc(
+      get(paste0("newly_covered", suffix)) * get(weight_columns[2])
+    )) |>
     dplyr::mutate(
-      priority_provterr = ifelse(newly_covered == 0, NA, dplyr::row_number()),
-      .by = "prov_terr"
-    ) |>
-    # Nationwide priority
-    dplyr::arrange(desc(newly_covered)) |>
-    dplyr::mutate(
-      priority_canada = ifelse(newly_covered == 0, NA, dplyr::row_number())
-    ) |>
-    dplyr::rename_with(
-      \(col_name) paste0(col_name, suffix),
-      .cols = dplyr::all_of(new_cols)
+      !!paste0("priority", suffix) := (.data$newly_covered == 0) |>
+        ifelse(NA, dplyr::row_number())
     )
 }
