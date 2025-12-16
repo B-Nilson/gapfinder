@@ -66,13 +66,16 @@ prioritize_installations <- function(
       break
     }
   }
-  priority <- dplyr::bind_rows(
-    priority,
-    # Append remaining install_at
-    install_at |>
-      dplyr::filter(!id %in% priority$id) |>
-      dplyr::mutate(!!paste0("newly_covered", suffix) := 0)
-  )
+  priority <- priority |>
+    dplyr::bind_rows()
+  
+  # Append remaining install_at
+  priority <- priority |>
+    dplyr::bind_rows(
+      install_at |>
+        dplyr::filter(!id %in% priority$id) |>
+        dplyr::mutate(!!paste0("newly_covered", suffix) := 0)
+    )
 
   # add priorities for each resolution
   new_cols <- c("newly_covered", "priority_provterr", "priority_canada")
