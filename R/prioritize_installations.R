@@ -93,7 +93,7 @@ prioritize_installations <- function(
         tidyr::pivot_wider(
           names_from = dplyr::all_of(to_cover_groups),
           values_from = "to_cover_weight",
-          names_glue = "newly_covered_{.name}{suffix}"
+          names_glue = "newly_covered_{.name}"
         ) |>
         dplyr::group_by(.data$install_at_id) |>
         dplyr::summarise(
