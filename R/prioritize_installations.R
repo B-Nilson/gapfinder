@@ -1,3 +1,29 @@
+#' Prioritize installations by their coverage.
+#'
+#' @description
+#'   Given a set of points to cover (`to_cover`) and a set of points to install at (`install_at`), prioritizes the points to install at by their coverage of points to cover.
+#'   The prioritization is based on the weighted sum of the coverage of each point to install at.
+#'   The weights are determined by the columns specified in `weight_columns`.
+#'   The coverage of each point to install at is determined by the distance `cover_distance`.
+#'
+#' @param install_at An `sf` data frame containing the locations of the to consider for installation.
+#' @param to_cover An `sf` data frame containing the locations desired to be covered by `install_at` within `cover_distance`.
+#'   If grouped, the coverage will be calculated for each group and the sum of those will be used to prioritize 
+#'   (effectively this adds additional information on coverage of each group without changing the prioritization).
+#' @param cover_distance The distance from an installation that a location is considered to be covered.
+#'   Expected to be a `units` object, otherwise a `numeric` which is assumed to be in km.
+#'   Defaults to 25 km.
+#' @param weight_columns A character vector containing the names of the columns in `install_at` and `to_cover`
+#'   that should be used as weights when prioritzing the coverage of each potential installation.
+#'   Weights will be summed for all `to_cover` covered by each `install_at`, and multiplied by the corresponding weight for `install_at`.
+#'   If a single weight column is provided, it will be used for both `install_at` and `to_cover`.
+#'   If not found in `install_at` or `to_cover`, a default of weight 1 will be used.
+#'   Defaults to `c(".weight", ".weight")`, equivalent to `".weight"`.
+#' @param suffix A character string to append to the end of the new columns created (i.e. `"newly_covered{suffix}"` and `"priority{suffix}"`).
+#'   Defaults to `""`.
+#' @return An `sf` data frame ranking the installations weighted by `weight_columns` with added columns for `"newly_covered{suffix}"` and `"priority{suffix}"` (as well as additional pairs of columns for each group in `to_cover` if grouped).
+#'   The `"newly_covered{suffix}"` column contains the sum product of weights for new locations to cover by each installation if installed in order of `"priority{suffix}"`.
+#' @export
 prioritize_installations <- function(
   install_at,
   to_cover,
