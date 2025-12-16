@@ -30,7 +30,10 @@ prioritize_installations <- function(
 
   # Determine which "to_cover" are in range of each `install_at`
   coverages <- to_cover |>
-    get_covered(install_at = install_at, cover_distance = cover_distance)
+    get_covered(
+      install_at = install_at,
+      cover_distance = cover_distance
+    )
 
   # Handle no coverage
   if (nrow(coverages) == 0) {

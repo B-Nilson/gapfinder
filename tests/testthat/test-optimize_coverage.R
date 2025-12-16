@@ -9,7 +9,7 @@ test_that("real case works", {
 
   # Define what we want the monitors to cover (Yukon population AND Yukon communities)
   to_cover <- canadata::gridded_2016_population |>
-    dplyr::rename(prov_terr = "prov_terrs") |> 
+    dplyr::rename(prov_terr = "prov_terrs") |>
     dplyr::bind_rows(
       canadata::communities |> dplyr::mutate(total_population = 1)
     ) |>
