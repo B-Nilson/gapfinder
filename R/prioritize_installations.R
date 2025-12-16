@@ -165,7 +165,7 @@ prioritize_installations <- function(
   # add priorities
   priority |>
     dplyr::arrange(dplyr::desc(
-      get(new_columns[1]) * get(weight_columns[2])
+      get(new_columns[1]) * get(new_columns[1])
     )) |>
     dplyr::mutate(
       !!new_columns[2] := (.data[[new_columns[1]]] == 0) |>
