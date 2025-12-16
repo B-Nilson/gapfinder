@@ -5,13 +5,15 @@ prioritize_installations <- function(
   weight_columns = c(".weight", ".weight"),
   suffix = ""
 ) {
+  new_columns <- c("newly_covered", "priority") |>
+    paste0(suffix)
   if (nrow(install_at) == 0 | nrow(to_cover) == 0) {
     warning("No entries in either `install_at` or `to_cover`")
     return(
       install_at |>
         dplyr::mutate(
-          !!paste0("newly_covered", suffix) := 0,
-          !!paste0("priority", suffix) := NA_integer_
+          !!new_columns[1] := 0,
+          !!new_columns[2] := NA_integer_
         )
     )
   }
@@ -41,8 +43,8 @@ prioritize_installations <- function(
     return(
       install_at |>
         dplyr::mutate(
-          !!paste0("newly_covered", suffix) := 0,
-          !!paste0("priority", suffix) := NA_integer_
+          !!new_columns[1] := 0,
+          !!new_columns[2] := NA_integer_
         )
     )
   }
@@ -88,7 +90,7 @@ prioritize_installations <- function(
     priority[[i]] <- install_at |>
       dplyr::filter(.data$.id == best_coverage$install_at_id) |>
       dplyr::mutate(
-        !!paste0("newly_covered", suffix) := best_coverage$to_cover_weight
+        !!new_columns[1] := best_coverage$to_cover_weight
       )
 
     # Stop if no more coverage
@@ -104,21 +106,17 @@ prioritize_installations <- function(
     dplyr::bind_rows(
       install_at |>
         dplyr::filter(!.data$.id %in% priority$.id) |>
-        dplyr::mutate(!!paste0("newly_covered", suffix) := 0)
+        dplyr::mutate(!!new_columns[1] := 0)
     ) |>
     dplyr::select(-".id")
 
   # add priorities
   priority |>
     dplyr::arrange(dplyr::desc(
-      get(paste0("newly_covered", suffix)) * get(weight_columns[2])
+      get(new_columns[1]) * get(weight_columns[2])
     )) |>
     dplyr::mutate(
-      !!paste0("priority", suffix) := (.data[[paste0(
-        "newly_covered",
-        suffix
-      )]] ==
-        0) |>
+      !!new_columns[2] := (.data[[new_columns[1]]] == 0) |>
         ifelse(NA, dplyr::row_number())
     )
 }
