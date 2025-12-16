@@ -77,7 +77,9 @@ prioritize_installations <- function(
     # Place monitor where most covered
     priority[[i]] <- install_at |>
       dplyr::filter(.data$.id == best_coverage$install_at_id) |>
-      dplyr::mutate(newly_covered = best_coverage$to_cover_weight)
+      dplyr::mutate(
+        !!paste0("newly_covered", suffix) := best_coverage$to_cover_weight
+      )
 
     # Stop if no more coverage
     if (nrow(new_coverage) == 0) {
@@ -102,7 +104,11 @@ prioritize_installations <- function(
       get(paste0("newly_covered", suffix)) * get(weight_columns[2])
     )) |>
     dplyr::mutate(
-      !!paste0("priority", suffix) := (.data$newly_covered == 0) |>
+      !!paste0("priority", suffix) := (.data[[paste0(
+        "newly_covered",
+        suffix
+      )]] ==
+        0) |>
         ifelse(NA, dplyr::row_number())
     )
 }
