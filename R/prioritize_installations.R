@@ -1,7 +1,7 @@
 prioritize_installations <- function(
   install_at,
   to_cover,
-  cover_dist,
+  cover_distance = 25 |> units::set_units("km"),
   drop_no_coverage = TRUE,
   suffix = ""
 ) {
