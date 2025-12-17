@@ -66,31 +66,11 @@ mark_nearest_location <- function(
       }
       return(nearest)
     }) |>
-    dplyr::mutate(
-      !!paste0(c(".nearest_to_id", to_group_values), collapse = "_") := from |>
-        find_nearest(
-          to = dplyr::ungroup(to),
-          from_id_col = from_id_col,
-          to_id_col = to_id_col
-        ) |>
-        dplyr::pull(.nearest_to_id),
-      !!paste0(
-        c(".nearest_to_distance", to_group_values),
-        collapse = "_"
-      ) := do.call(
-        pmin,
-        c(
-          dplyr::across(dplyr::starts_with(".nearest_to_distance")),
-          na.rm = TRUE
-        )
-      ),
-      !!paste0(
-        c(".has_nearby", to_group_values),
-        collapse = "_"
-      ) := rowSums(dplyr::across(
-        dplyr::starts_with(".has_nearby")
-      )) >
-        0
+    summarise_nearest_groups(
+      to = to,
+      group_values = to_group_values,
+      from_id_col = from_id_col,
+      to_id_col = to_id_col
     ) |>
     dplyr::arrange(.data[[from_id_col]])
 
@@ -119,5 +99,42 @@ find_nearest <- function(from, to, from_id_col = ".id", to_id_col = ".id") {
     dplyr::select(dplyr::all_of(from_id_col)) |>
     dplyr::mutate(
       .nearest_to_id = to[[to_id_col]][nearest_to_each_from]
+    )
+}
+
+summarise_nearest_groups <- function(
+  nearest_features,
+  to,
+  group_values = NULL,
+  from_id_col,
+  to_id_col
+) {
+  if (is.null(group_values)) {
+    return(nearest_features)
+  }
+  grouped_columns <- c(
+    ".nearest_to_id",
+    ".nearest_to_distance",
+    ".has_nearby"
+  ) |>
+    paste(sep = "_", group_values |> paste(collapse = "_"))
+  nearest_features |>
+    dplyr::mutate(
+      !!grouped_columns[1] := from |>
+        find_nearest(
+          to = dplyr::ungroup(to),
+          from_id_col = from_id_col,
+          to_id_col = to_id_col
+        ) |>
+        dplyr::pull(".nearest_to_id"),
+      !!grouped_columns[2] := pmin |>
+        do.call(c(
+          dplyr::across(dplyr::starts_with(".nearest_to_distance")),
+          na.rm = TRUE
+        )),
+      !!grouped_columns[3] := rowSums(dplyr::across(
+        dplyr::starts_with(".has_nearby")
+      )) >
+        0
     )
 }
