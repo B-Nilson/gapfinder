@@ -125,12 +125,12 @@ add_nearby_to_columns <- function(
     dplyr::mutate(
       .nearest_to_distance = from[.data[[from_id_col]], ] |>
         sf::st_distance(
-          y = to[.nearest_to_id |> match(to[[to_id_col]]), ],
+          y = to[.data$.nearest_to_id |> match(to[[to_id_col]]), ],
           by_element = TRUE
         ) |>
         units::set_units("km") |>
         round(digits = 1), # TODO: what if sub km data used?
-      .has_nearby = .nearest_to_distance <= within
+      .has_nearby = .data$.nearest_to_distance <= within
     )
 
   # Widen by groups if present
