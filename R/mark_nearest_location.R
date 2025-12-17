@@ -141,7 +141,7 @@ add_nearby_to_columns <- function(
     nearest <- nearest |>
       tidyr::pivot_wider(
         names_from = dplyr::any_of(to_groups),
-        values_from = new_columns
+        values_from = dplyr::all_of(new_columns)
       )
   }
   return(nearest)
