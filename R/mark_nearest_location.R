@@ -23,7 +23,9 @@ mark_nearest_location <- function(
   }
   if (!to_id_col %in% names(to)) {
     to <- to |>
-      dplyr::mutate(!!to_id_col := seq_len(nrow(to)))
+      dplyr::ungroup() |>
+      dplyr::mutate(!!to_id_col := seq_len(nrow(to))) |>
+      dplyr::group_by(dplyr::pick(dplyr::any_of(to_groups)))
   }
 
   nearest_features <- to |>
