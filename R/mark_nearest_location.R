@@ -3,7 +3,7 @@
 #' This function marks the nearest location (id and distance) from a set of points to another set of points.
 #' For locations within `within`, a flag is raised indicating that site has a location nearby.
 #' If `to` is a grouped dataframe (see [dplyr::group_by]), the nearest location of each grouping is marked, as well as the normal overall ungrouped columns.
-#' 
+#'
 #' This function relies on unique row identifier columns for both `from` and `to`, proovided via the `from_id_col` and `to_id_col` arguments.
 #' If no such column is present, a row identifier column is added with default name `".id"`, and will be removed before returning the output.
 #'
@@ -11,8 +11,8 @@
 #' @param to `sf` data frame containing the points to mark nearest to
 #' @param within distance to mark nearest points within. Either a `units` object (see [units::set_units]), or a `numeric` in km
 #' @param from_id_col,to_id_col column name in `from`/`to` containing unique row identifiers. If not present will be included (using [dplyr::row_number]) and removed within the function.
-#' @return data frame with the nearest location in `to` to each location in `from` marked. 
-#'   Columns `.nearest_to_id`, `.nearest_to_distance`, and `.has_nearby` will be added, 
+#' @return data frame with the nearest location in `to` to each location in `from` marked.
+#'   Columns `.nearest_to_id`, `.nearest_to_distance`, and `.has_nearby` will be added,
 #'   and if `to` is grouped, those will be repeated for each grouping as well.
 #'   If `from` is grouped the results will not be different from ungrouped, but the grouping will be maintained.
 #' @export
@@ -47,8 +47,8 @@ mark_nearest_location <- function(
     to <- to |>
       dplyr::ungroup() |>
       dplyr::mutate(!!to_id_col := dplyr::row_number()) |>
-      as.data.frame() |> 
-      dplyr::group_by(dplyr::pick(dplyr::any_of(to_groups))) |> 
+      as.data.frame() |>
+      dplyr::group_by(dplyr::pick(dplyr::any_of(to_groups))) |>
       sf::st_as_sf()
   }
 
@@ -79,7 +79,9 @@ mark_nearest_location <- function(
   # Join back to `from` and cleanup
   result <- from |>
     # Ensure no duplicate columns from running the function repeatedly
-    dplyr::select(-(dplyr::any_of(names(nearest_features)) & !dplyr::all_of(from_id_col))) |>
+    dplyr::select(
+      -(dplyr::any_of(names(nearest_features)) & !dplyr::all_of(from_id_col))
+    ) |>
     dplyr::left_join(nearest_features, by = from_id_col)
   if (need_to_add_from_id) {
     # Remove added id column

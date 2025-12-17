@@ -59,7 +59,7 @@ test_that("repeat calls handled correctly", {
       within = test_case$cover_distance
     ) |>
     expect_silent()
-  
+
   twice <- once |>
     dplyr::group_by(type) |>
     mark_nearest_location(
@@ -67,7 +67,7 @@ test_that("repeat calls handled correctly", {
         dplyr::group_by(type),
       within = test_case$cover_distance
     ) |>
-    expect_silent() 
+    expect_silent()
 
   expect_identical(once, twice)
 })
