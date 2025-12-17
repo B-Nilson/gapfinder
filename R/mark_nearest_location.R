@@ -48,6 +48,7 @@ mark_nearest_location <- function(
     ) |>
     # Include ungrouped (overall) nearby columns
     summarise_nearest_groups(
+      from = from,
       to = to,
       group_values = to_group_values,
       from_id_col = from_id_col,
@@ -126,6 +127,7 @@ add_nearby_to_columns <- function(
 
 summarise_nearest_groups <- function(
   nearest_features,
+  from,
   to,
   group_values = NULL,
   from_id_col,
