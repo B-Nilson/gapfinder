@@ -1,4 +1,3 @@
-# TODO: Handle new columns already existing (like if the function were called a second time with the same data)
 mark_nearest_location <- function(
   from,
   to,
@@ -58,6 +57,8 @@ mark_nearest_location <- function(
 
   # Join back to `from` and cleanup
   result <- from |>
+    # Ensure no duplicate columns from running the function repeatedly
+    dplyr::select(-(dplyr::any_of(names(nearest_features)) & !dplyr::all_of(from_id_col))) |>
     dplyr::left_join(nearest_features, by = from_id_col)
   if (need_to_add_from_id) {
     # Remove added id column
