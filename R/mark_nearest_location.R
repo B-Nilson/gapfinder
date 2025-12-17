@@ -33,39 +33,16 @@ mark_nearest_location <- function(
 
   nearest_features <- to |>
     dplyr::group_split() |>
-    handyr::for_each(.join = TRUE, .show_progress = FALSE, \(to_group_data) {
-      nearest <- from |>
-        find_nearest(
-          to = to_group_data,
-          from_id_col = from_id_col,
-          to_id_col = to_id_col
-        ) |>
-        # Add group columns if present
-        dplyr::left_join(
-          to_group_data |>
-            as.data.frame() |>
-            dplyr::select(dplyr::any_of(c(to_id_col, to_groups))),
-          by = c(.nearest_to_id = to_id_col)
-        ) |>
-        dplyr::mutate(
-          .nearest_to_distance = from[get(from_id_col), ] |>
-            sf::st_distance(
-              to[match(.nearest_to_id, to[[to_id_col]]), ],
-              by_element = TRUE
-            ) |>
-            units::set_units("km") |>
-            round(digits = 1),
-          .has_nearby = .nearest_to_distance <= within
-        )
-      if (length(to_groups) > 0) {
-        nearest <- nearest |>
-          tidyr::pivot_wider(
-            names_from = dplyr::any_of(to_groups),
-            values_from = c(.nearest_to_id, .nearest_to_distance, .has_nearby)
-          )
-      }
-      return(nearest)
-    }) |>
+    handyr::for_each(
+      add_nearby_to_columns,
+      from = from,
+      from_id_col = from_id_col,
+      to_id_col = to_id_col,
+      within = within,
+      to_groups = to_groups,
+      .join = TRUE,
+      .show_progress = FALSE
+    ) |>
     summarise_nearest_groups(
       to = to,
       group_values = to_group_values,
@@ -100,6 +77,47 @@ find_nearest <- function(from, to, from_id_col = ".id", to_id_col = ".id") {
     dplyr::mutate(
       .nearest_to_id = to[[to_id_col]][nearest_to_each_from]
     )
+}
+
+add_nearby_to_columns <- function(
+  from,
+  to,
+  from_id_col,
+  to_id_col,
+  within,
+  to_groups
+) {
+  new_columns <- c(".nearest_to_id", ".nearest_to_distance", ".has_nearby")
+  to_id_and_groups <- to |>
+    as.data.frame() |>
+    dplyr::select(dplyr::any_of(c(to_id_col, to_groups)))
+
+  nearest <- from |>
+    # Add .nearest_to_id column
+    find_nearest(to = to, from_id_col = from_id_col, to_id_col = to_id_col) |>
+    # Join on that column to include groups if provided
+    dplyr::left_join(to_id_and_groups, by = c(.nearest_to_id = to_id_col)) |>
+    # Add other columns
+    dplyr::mutate(
+      .nearest_to_distance = from[.data[[from_id_col]], ] |>
+        sf::st_distance(
+          y = to[.nearest_to_id |> match(to[[to_id_col]]), ],
+          by_element = TRUE
+        ) |>
+        units::set_units("km") |>
+        round(digits = 1), # TODO: what if sub km data used?
+      .has_nearby = .nearest_to_distance <= within
+    )
+  
+  # Widen by groups if present
+  if (length(to_groups) > 0) {
+    nearest <- nearest |>
+      tidyr::pivot_wider(
+        names_from = dplyr::any_of(to_groups),
+        values_from = new_columns
+      )
+  }
+  return(nearest)
 }
 
 summarise_nearest_groups <- function(
