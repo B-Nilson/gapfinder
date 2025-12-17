@@ -45,12 +45,15 @@ mark_nearest_location <- function(
   }
   if (!to_id_col %in% names(to)) {
     to <- to |>
-      dplyr::mutate(!!to_id_col := dplyr::row_number())
+      dplyr::ungroup() |>
+      dplyr::mutate(!!to_id_col := dplyr::row_number()) |>
+      as.data.frame() |> 
+      dplyr::group_by(dplyr::pick(dplyr::any_of(to_groups))) |> 
+      sf::st_as_sf()
   }
 
+  # For each group in `to`,
   nearest_features <- to |>
-    # For each group in `to`,
-    dplyr::group_by(dplyr::pick(dplyr::any_of(to_groups))) |>
     dplyr::group_split() |>
     # Find the nearest location in `from` and mark its ID, distance, and whether it is within `within`
     handyr::for_each(
