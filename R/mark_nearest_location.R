@@ -15,24 +15,27 @@ mark_nearest_location <- function(
       dplyr::group_keys() |>
       tidyr::unite("values", dplyr::everything(), sep = "_") |>
       dplyr::pull("values")
+    to <- to |> dplyr::ungroup()
   } else {
     to_group_values <- NULL
   }
 
+  # Handle id columns not in data
   need_to_add_from_id <- !from_id_col %in% names(from)
   if (need_to_add_from_id) {
     from <- from |>
-      dplyr::mutate(!!from_id_col := seq_len(nrow(from)))
+      dplyr::mutate(!!from_id_col := dplyr::row_number())
   }
   if (!to_id_col %in% names(to)) {
     to <- to |>
-      dplyr::ungroup() |>
-      dplyr::mutate(!!to_id_col := seq_len(nrow(to))) |>
-      dplyr::group_by(dplyr::pick(dplyr::any_of(to_groups)))
+      dplyr::mutate(!!to_id_col := dplyr::row_number())
   }
 
   nearest_features <- to |>
+    # For each group in `to`,
+    dplyr::group_by(dplyr::pick(dplyr::any_of(to_groups))) |>
     dplyr::group_split() |>
+    # Find the nearest location in `from` and mark its ID, distance, and whether it is within `within`
     handyr::for_each(
       add_nearby_to_columns,
       from = from,
@@ -43,6 +46,7 @@ mark_nearest_location <- function(
       .join = TRUE,
       .show_progress = FALSE
     ) |>
+    # Include ungrouped (overall) nearby columns
     summarise_nearest_groups(
       to = to,
       group_values = to_group_values,
@@ -51,16 +55,16 @@ mark_nearest_location <- function(
     ) |>
     dplyr::arrange(.data[[from_id_col]])
 
-  result <- from |> 
+  # Join back to `from` and cleanup
+  result <- from |>
     dplyr::left_join(nearest_features, by = from_id_col)
-
   if (need_to_add_from_id) {
+    # Remove added id column
     result <- result |>
       dplyr::select(-dplyr::all_of(from_id_col))
   }
-
-  # Add groups back in if originally included
   if (length(from_groups)) {
+    # Add groups back in if originally included
     result <- result |>
       dplyr::group_by(dplyr::pick(dplyr::any_of(from_groups)))
   }
@@ -108,7 +112,7 @@ add_nearby_to_columns <- function(
         round(digits = 1), # TODO: what if sub km data used?
       .has_nearby = .nearest_to_distance <= within
     )
-  
+
   # Widen by groups if present
   if (length(to_groups) > 0) {
     nearest <- nearest |>
