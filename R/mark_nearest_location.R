@@ -6,6 +6,9 @@ mark_nearest_location <- function(
   from_id_col = ".id",
   to_id_col = ".id"
 ) {
+  # Handle `from`/`to` being grouped
+  from_groups <- from |> dplyr::groups() |> as.character()
+  from <- from |> dplyr::ungroup()
   to_groups <- to |> dplyr::groups() |> as.character()
   if (length(to_groups) > 0) {
     to_group_values <- to |>
@@ -97,6 +100,12 @@ mark_nearest_location <- function(
   if (need_to_add_from_id) {
     result <- result |>
       dplyr::select(-dplyr::all_of(from_id_col))
+  }
+
+  # Add groups back in if originally included
+  if (length(from_groups)) {
+    result <- result |>
+      dplyr::group_by(dplyr::pick(dplyr::any_of(from_groups)))
   }
   return(result)
 }
