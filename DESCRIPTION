@@ -32,4 +32,5 @@ Imports:
     tidyr,
     units
 Remotes: 
+    B-Nilson/canadata,
     B-Nilson/handyr
