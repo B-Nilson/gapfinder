@@ -8,7 +8,7 @@
 #'
 #' @param install_at An `sf` data frame containing the locations of the to consider for installation.
 #' @param to_cover An `sf` data frame containing the locations desired to be covered by `install_at` within `cover_distance`.
-#'   If grouped, the coverage will be calculated for each group and the sum of those will be used to prioritize 
+#'   If grouped, the coverage will be calculated for each group and the sum of those will be used to prioritize
 #'   (effectively this adds additional information on coverage of each group without changing the prioritization).
 #' @param cover_distance The distance from an installation that a location is considered to be covered.
 #'   Expected to be a `units` object, otherwise a `numeric` which is assumed to be in km.
