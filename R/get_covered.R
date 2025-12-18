@@ -1,5 +1,5 @@
 #' Get locations within a specified distance of another set of locations
-#' 
+#'
 #' @description
 #'   Checks whether each location in `to_cover` is within `cover_distance` of each location in `install_at`.
 #'   Leverages the fast [sf::st_is_within_distance()] function to perform the check, so distances are not provided.
