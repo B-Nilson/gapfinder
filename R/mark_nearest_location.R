@@ -32,7 +32,6 @@ mark_nearest_location <- function(
       dplyr::group_keys() |>
       tidyr::unite("values", dplyr::everything(), sep = "_") |>
       dplyr::pull("values")
-    to <- to |> dplyr::ungroup()
   } else {
     to_group_values <- NULL
   }
