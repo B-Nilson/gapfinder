@@ -6,3 +6,5 @@
 ^README.Rmd$
 ^cran-comments.md$
 ^gapfinder.Rproj$
+^\.github$
+^codecov\.yml$
