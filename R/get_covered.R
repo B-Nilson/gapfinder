@@ -3,6 +3,12 @@ get_covered <- function(
   to_cover,
   cover_distance = 25 |> units::set_units("km")
 ) {
+  stopifnot(
+    inherits(install_at, "sf") & nrow(install_at) > 0,
+    inherits(to_cover, "sf") & nrow(install_at) > 0,
+    inherits(cover_distance, "units") | is.numeric(cover_distance)
+  )
+
   to_cover |>
     sf::st_is_within_distance(
       y = install_at,
