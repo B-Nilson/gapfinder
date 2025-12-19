@@ -80,14 +80,17 @@ plot_coverage <- function(
       existing_locations$.id %in% provides_coverage,
     ]
 
+    # Get existing coverage if any nearby
     if (nrow(existing_locations) == 0) {
       existing_locations <- NULL
+      existing_coverage <- NULL
     } else {
-      # Get existing coverage
       existing_coverage <- existing_locations |>
         sf::st_buffer(dist = cover_distance) |>
         sf::st_union()
     }
+  }else {
+    existing_coverage <- NULL
   }
 
   # Find added coverage if provided
@@ -95,6 +98,8 @@ plot_coverage <- function(
     added_coverage <- optimized_locations |>
       sf::st_buffer(dist = cover_distance) |>
       sf::st_union()
+  } else {
+    added_coverage <- NULL
   }
 
   # Build background map if needed
