@@ -13,6 +13,7 @@ plot_coverage(
   weight_columns = c(".weight", ".weight"),
   background_map = NULL,
   in_canada = FALSE,
+  select_prov_terrs = "all",
   colours = list(to_cover = "#FC4E07", existing = "#00AFBB", proposed = "#E7B800", others
     = "black"),
   fill_labels = list(to_cover = "To Cover", existing = "Existing", proposed = "Proposed",
@@ -47,6 +48,10 @@ Defaults to \code{NULL} - a blank plot will be used.}
 \item{in_canada}{A logical indicating whether the coverage should be plotted over a map of Canada.
 If \code{TRUE}, a background map of Canada will be generated if \code{background_map} is \code{NULL}, and the plot will be projected using a Canada-specific projection.
 Defaults to \code{FALSE}.}
+
+\item{select_prov_terrs}{A character vector containing the names (abbreviations or EN/FR names) of the provinces and territories to include in the map of Canada.
+Ignored if \code{in_canada} is \code{FALSE}.
+Defaults to \code{"all"} - meaning a bounding box will be calulated from the extent of the provided data for the map instead of filtering by province/territory.}
 
 \item{colours}{A list containing the fill colours for coverage and installation locations.
 Must be length 4 and have names \code{to_cover}, \code{existing}, \code{proposed}, and \code{others}.

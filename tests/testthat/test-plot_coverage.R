@@ -22,7 +22,8 @@ test_that("test case works", {
           "Ease of Install\n(Community Type)",
           "2016 Population\n(To Cover)"
         )),
-      in_canada = TRUE
+      in_canada = TRUE,
+      select_prov_terrs = optimized_locations$prov_terr |> as.character() |> unique()
     ) |>
     expect_s3_class("ggplot") |>
     expect_warning(

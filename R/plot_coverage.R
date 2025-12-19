@@ -17,6 +17,9 @@
 #' @param in_canada A logical indicating whether the coverage should be plotted over a map of Canada.
 #'   If `TRUE`, a background map of Canada will be generated if `background_map` is `NULL`, and the plot will be projected using a Canada-specific projection.
 #'   Defaults to `FALSE`.
+#' @param select_prov_terrs A character vector containing the names (abbreviations or EN/FR names) of the provinces and territories to include in the map of Canada.
+#'   Ignored if `in_canada` is `FALSE`.
+#'   Defaults to `"all"` - meaning a bounding box will be calulated from the extent of the provided data for the map instead of filtering by province/territory.
 #' @param colours A list containing the fill colours for coverage and installation locations.
 #'   Must be length 4 and have names `to_cover`, `existing`, `proposed`, and `others`.
 #'   Defaults to `list(to_cover = "#FC4E07", existing = "#00AFBB", proposed = "#E7B800", others = "black")`.
@@ -39,6 +42,7 @@ plot_coverage <- function(
   weight_columns = c(".weight", ".weight"),
   background_map = NULL,
   in_canada = FALSE,
+  select_prov_terrs = "all",
   colours = list(
     to_cover = "#FC4E07",
     existing = "#00AFBB",
@@ -94,26 +98,16 @@ plot_coverage <- function(
   }
 
   # Build background map if needed
-  if (in_canada & is.null(background_map)) {
-    rlang::check_installed("canadata")
-    background_map_data <- canadata::provinces_and_territories |>
-      sf::st_crop(sf::st_bbox(
-        dplyr::bind_rows(
-          install_at,
-          to_cover,
-          existing_locations,
-          optimized_locations
-        ) |>
-          sf::st_convex_hull() |>
-          sf::st_buffer(dist = cover_distance * 5)
-      ))
-    background_map <- ggplot2::ggplot() +
-      ggplot2::geom_sf(
-        data = background_map_data,
-        fill = "#FFF9EB",
-        colour = "black",
-        linewidth = 0.2
-      )
+  need_canada_tiles <- in_canada & is.null(background_map)
+  if (need_canada_tiles) {
+    if (select_prov_terrs == "all") {
+      background_map <- install_at |>
+        list(to_cover, existing_locations, optimized_locations) |>
+        get_extent(.buffer_distance = cover_distance * 5) |>
+        make_canada_map()
+    } else {
+      background_map <- make_canada_map(prov_terrs = select_prov_terrs)
+    }
   } else if (is.null(background_map)) {
     background_map <- ggplot2::ggplot()
   }
@@ -140,6 +134,33 @@ plot_coverage <- function(
       fill_labels = fill_labels,
       weight_columns = weight_columns,
       in_canada = in_canada
+    )
+}
+
+make_canada_map <- function(bbox = NULL, prov_terrs = "all") {
+  rlang::check_installed("canadata")
+  background_map_data <- canadata::provinces_and_territories # TODO: cut out water
+  if (prov_terrs != "all") {
+    background_map_data <- background_map_data |>
+      dplyr::filter(
+        (.data$abbreviation %in% prov_terrs) |
+          .data$name_en %in% prov_terrs |
+          .data$name_fr %in% prov_terrs
+      )
+  }
+  if (!is.null(bbox)) {
+    background_map_data <- background_map_data |>
+      sf::st_crop(bbox) |>
+      suppressWarnings() # attribute variables are assumed to be spatially constant throughout all geometries
+  }
+  background_map_data <- background_map_data |>
+    sf::st_transform(crs = "+proj=lcc +lon_0=-92 +lat_1=49 +lat_2=77")
+  ggplot2::ggplot() +
+    ggplot2::geom_sf(
+      data = background_map_data,
+      fill = "#FFF9EB",
+      colour = "black",
+      linewidth = 0.2
     )
 }
 
