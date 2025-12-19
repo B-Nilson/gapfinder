@@ -165,6 +165,14 @@ plot_coverage <- function(
     )
 }
 
+get_extent <- function(..., .buffer_distance = 25 |> units::set_units("km")) {
+  dplyr::bind_rows(...) |>
+    sf::st_union() |>
+    sf::st_convex_hull() |>
+    sf::st_buffer(dist = .buffer_distance) |>
+    sf::st_bbox()
+}
+
 make_canada_map <- function(bbox = NULL, prov_terrs = "all") {
   rlang::check_installed("canadata")
   background_map_data <- canadata::provinces_and_territories # TODO: cut out water
