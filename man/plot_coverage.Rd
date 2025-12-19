@@ -10,7 +10,7 @@ plot_coverage(
   existing_locations = NULL,
   optimized_locations = NULL,
   cover_distance = units::set_units(25, "km"),
-  weight_columns = c(".weight", ".weight"),
+  weight_columns = NA,
   background_map = NULL,
   in_canada = FALSE,
   select_prov_terrs = "all",
@@ -39,7 +39,8 @@ Expected to be a \code{units} object, otherwise a \code{numeric} which is assume
 Defaults to 25 km.}
 
 \item{weight_columns}{A character vector containing the names of the columns in \code{install_at} and \code{to_cover}
-that was used as weights when optimizing the coverage of each potential installation.}
+that was used as weights when optimizing the coverage of each potential installation.
+Defaults to \code{NA} - no weights will be used.}
 
 \item{background_map}{A \code{ggplot} object containing the base map of the plot.
 If provided, the coverage will be plotted on top of this map.

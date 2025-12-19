@@ -11,6 +11,7 @@
 #'   Defaults to 25 km.
 #' @param weight_columns A character vector containing the names of the columns in `install_at` and `to_cover`
 #'   that was used as weights when optimizing the coverage of each potential installation.
+#'   Defaults to `NA` - no weights will be used.
 #' @param background_map A `ggplot` object containing the base map of the plot.
 #'   If provided, the coverage will be plotted on top of this map.
 #'   Defaults to `NULL` - a blank plot will be used.
@@ -39,7 +40,7 @@ plot_coverage <- function(
   existing_locations = NULL,
   optimized_locations = NULL,
   cover_distance = 25 |> units::set_units("km"),
-  weight_columns = c(".weight", ".weight"),
+  weight_columns = NA,
   background_map = NULL,
   in_canada = FALSE,
   select_prov_terrs = "all",
@@ -59,6 +60,9 @@ plot_coverage <- function(
   point_shape = 21,
   stroke_colour = "black"
 ) {
+  if (length(weight_columns) == 1) {
+    weight_columns <- rep(weight_columns, 2)
+  }
   # Ensure weight_columns has names
   if (is.null(names(weight_columns))) {
     names(weight_columns) <- weight_columns
@@ -220,10 +224,17 @@ add_coverage_layers <- function(
       data = to_cover,
       colour = stroke_colour,
       shape = point_shape,
-      ggplot2::aes(size = get(weight_columns[2]), fill = fill_labels$to_cover),
+      ggplot2::aes(
+        size = if (!is.na(weight_columns[2])) get(weight_columns[2]) else 1,
+        fill = fill_labels$to_cover
+      ),
       alpha = 1,
       linewidth = 0.1
     )
+  if (is.na(weight_columns[2])) {
+    coverage_map <- coverage_map +
+      ggplot2::guides(size = "none")
+  }
 
   # Add existing and added coverage (if provided)
   if (!is.null(existing_locations)) {
@@ -281,12 +292,18 @@ add_coverage_layers <- function(
         data = optimized_locations,
         colour = stroke_colour,
         ggplot2::aes(
-          shape = as.factor(get(weight_columns[1])),
+          shape = if (!is.na(weight_columns[1])) {
+            as.factor(get(weight_columns[1]))
+          }else "",
           fill = fill_labels$proposed
         ),
         alpha = 1,
         linewidth = 0.1
       )
+    if (is.na(weight_columns[2])) {
+      coverage_map <- coverage_map +
+        ggplot2::guides(shape = "none")
+    }
   }
   return(coverage_map)
 }
@@ -299,11 +316,22 @@ format_coverage_map <- function(
   weight_columns
 ) {
   axis_expand <- ggplot2::expansion(0.01)
+
+  if (!is.na(weight_columns[2])) {
+    size_guide <- ggplot2::guide_legend(
+      order = 2,
+      override.aes = list(shape = point_shape, fill = colours$to_cover)
+    )
+  } else {
+    size_guide <- "none"
+  }
+
   coverage_map +
     ggplot2::scale_fill_manual(
       values = unname(unlist(colours)),
       breaks = unname(unlist(fill_labels[names(colours)]))
     ) +
+    ggplot2::scale_size_continuous(range = c(1, 3)) +
     ggplot2::scale_shape_manual(values = 21:25) +
     ggplot2::scale_x_continuous(expand = axis_expand) +
     ggplot2::scale_y_continuous(expand = axis_expand) +
@@ -335,9 +363,6 @@ format_coverage_map <- function(
         order = 1,
         override.aes = list(alpha = 1, shape = point_shape)
       ),
-      size = ggplot2::guide_legend(
-        order = 2,
-        override.aes = list(shape = point_shape, fill = colours$to_cover)
-      )
+      size = size_guide
     )
 }
