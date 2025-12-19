@@ -335,7 +335,7 @@ format_coverage_map <- function(
       values = unname(unlist(colours)),
       breaks = unname(unlist(fill_labels[names(colours)]))
     ) +
-    ggplot2::scale_size_continuous(range = c(1, 3)) +
+    ggplot2::scale_size_continuous(range = c(1, 4)) +
     ggplot2::scale_shape_manual(values = 21:25) +
     ggplot2::scale_x_continuous(expand = axis_expand) +
     ggplot2::scale_y_continuous(expand = axis_expand) +
