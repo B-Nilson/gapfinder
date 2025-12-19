@@ -219,6 +219,10 @@ add_coverage_layers <- function(
   stroke_colour
 ) {
   # Add locations to cover, scale size by weight column
+  if (!is.na(weight_columns[2])) {
+    to_cover <- to_cover |>
+      dplyr::arrange(dplyr::desc(.data[[weight_columns[2]]]))
+  }
   coverage_map <- map +
     ggplot2::geom_sf(
       data = to_cover,
