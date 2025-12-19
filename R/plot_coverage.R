@@ -93,7 +93,7 @@ plot_coverage <- function(
         sf::st_buffer(dist = cover_distance) |>
         sf::st_union()
     }
-  }else {
+  } else {
     existing_coverage <- NULL
   }
 
@@ -298,7 +298,9 @@ add_coverage_layers <- function(
         ggplot2::aes(
           shape = if (!is.na(weight_columns[1])) {
             as.factor(get(weight_columns[1]))
-          }else "",
+          } else {
+            ""
+          },
           fill = fill_labels$proposed
         ),
         alpha = 1,

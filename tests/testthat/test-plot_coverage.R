@@ -23,7 +23,9 @@ test_that("test case works", {
           "2016 Population\n(To Cover)"
         )),
       in_canada = TRUE,
-      select_prov_terrs = optimized_locations$prov_terr |> as.character() |> unique()
+      select_prov_terrs = optimized_locations$prov_terr |>
+        as.character() |>
+        unique()
     ) |>
     expect_s3_class("ggplot") |>
     expect_silent()
@@ -49,7 +51,9 @@ test_that("NA weight columns work", {
       cover_distance = test_case$cover_distance,
       weight_columns = c(NA, NA),
       in_canada = TRUE,
-      select_prov_terrs = optimized_locations$prov_terr |> as.character() |> unique()
+      select_prov_terrs = optimized_locations$prov_terr |>
+        as.character() |>
+        unique()
     ) |>
     expect_s3_class("ggplot") |>
     expect_silent()
