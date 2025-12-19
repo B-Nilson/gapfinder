@@ -112,6 +112,30 @@ plot_coverage <- function(
     background_map <- ggplot2::ggplot()
   }
 
+  # Ensure data layers are same projection as map
+  map_crs <- background_map$layers[[1]]$data |>
+    sf::st_crs() |>
+    handyr::on_error(.return = NA_character_)
+  needs_reproject <- in_canada & !is.na(map_crs)
+  if (needs_reproject) {
+    install_at <- install_at |>
+      sf::st_transform(crs = map_crs)
+    to_cover <- to_cover |>
+      sf::st_transform(crs = map_crs)
+    if (!is.null(existing_locations)) {
+      existing_locations <- existing_locations |>
+        sf::st_transform(crs = map_crs)
+      existing_coverage <- existing_coverage |>
+        sf::st_transform(crs = map_crs)
+    }
+    if (!is.null(optimized_locations)) {
+      optimized_locations <- optimized_locations |>
+        sf::st_transform(crs = map_crs)
+      added_coverage <- added_coverage |>
+        sf::st_transform(crs = map_crs)
+    }
+  }
+
   background_map |>
     # Add layers to map
     add_coverage_layers(
@@ -127,13 +151,12 @@ plot_coverage <- function(
       point_shape = point_shape,
       stroke_colour = stroke_colour
     ) |>
-    # Adjust theming, projection, etc
+    # Adjust theming etc
     format_coverage_map(
       colours = colours,
       point_shape = point_shape,
       fill_labels = fill_labels,
-      weight_columns = weight_columns,
-      in_canada = in_canada
+      weight_columns = weight_columns
     )
 }
 
@@ -260,11 +283,10 @@ format_coverage_map <- function(
   point_shape,
   colours,
   fill_labels,
-  weight_columns,
-  in_canada = FALSE
+  weight_columns
 ) {
   axis_expand <- ggplot2::expansion(0.01)
-  coverage_map_pretty <- coverage_map +
+  coverage_map +
     ggplot2::scale_fill_manual(
       values = unname(unlist(colours)),
       breaks = unname(unlist(fill_labels[names(colours)]))
@@ -305,13 +327,4 @@ format_coverage_map <- function(
         override.aes = list(shape = point_shape, fill = colours$to_cover)
       )
     )
-  if (in_canada) {
-    coverage_map_pretty <- coverage_map_pretty +
-      # Canada-specific projection # TODO: remove?
-      ggplot2::coord_sf(
-        crs = "+proj=lcc +lon_0=-92 +lat_1=49 +lat_2=77",
-        default = TRUE
-      )
-  }
-  return(coverage_map_pretty)
 }
